@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- tasks: GIN full-text search index (simple dictionary — Turkish uyumlu) -->
+    <changeSet id="idx_tasks_fts" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="tasks" indexName="idx_tasks_fts"/></not>
+        </preConditions>
+        <sql>CREATE INDEX idx_tasks_fts ON tasks USING gin(to_tsvector('simple', title || ' ' || coalesce(content, '')));</sql>
+    </changeSet>
+
+    <!-- projects: GIN full-text search index -->
+    <changeSet id="idx_projects_fts" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="projects" indexName="idx_projects_fts"/></not>
+        </preConditions>
+        <sql>CREATE INDEX idx_projects_fts ON projects USING gin(to_tsvector('simple', name || ' ' || coalesce(description, '')));</sql>
+    </changeSet>
+
+    <!-- users: fullName + username için trigram index (kısa sorgular dahil hızlı ILIKE) -->
+    <changeSet id="idx_users_fullname_trgm" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="users" indexName="idx_users_fullname_trgm"/></not>
+        </preConditions>
+        <sql>CREATE EXTENSION IF NOT EXISTS pg_trgm; CREATE INDEX idx_users_fullname_trgm ON users USING gin(full_name gin_trgm_ops, username gin_trgm_ops);</sql>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,35 @@
+export enum ProjectStatus {
+  ACTIVE = 'ACTIVE',
+  COMPLETED = 'COMPLETED',
+  ON_HOLD = 'ON_HOLD',
+  CANCELLED = 'CANCELLED',
+}
+
+export interface Project {
+  id: number;
+  name: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  status: ProjectStatus;
+  createdById: number;
+  createdByName: string;
+  managerId?: number;
+  managerName?: string;
+  teamIds: number[];
+  teamNames: string[];
+  taskCount?: number;
+  completedTaskCount?: number;
+  activeTaskCount?: number;
+}
+
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  status?: ProjectStatus;
+  teamIds?: number[];
+  managerId?: number;
+}
+

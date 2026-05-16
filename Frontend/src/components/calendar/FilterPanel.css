@@ -1,0 +1,244 @@
+.fp-root {
+  position: relative;
+  display: inline-block;
+}
+
+.fp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--ctp-surface0);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 8px;
+  padding: 6px 12px;
+  color: var(--ctp-text);
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  white-space: nowrap;
+}
+
+.fp-toggle:hover {
+  background: var(--ctp-surface1);
+}
+
+.fp-toggle--active {
+  border-color: var(--ctp-blue);
+  color: var(--ctp-blue);
+}
+
+.fp-badge {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  background: var(--ctp-blue);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.fp-caret {
+  font-size: 10px;
+  opacity: 0.6;
+}
+
+/* Panel */
+.fp-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 1000;
+  background: var(--ctp-mantle);
+  border: 1px solid var(--ctp-surface0);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  padding: 12px 14px;
+  min-width: 280px;
+  max-width: 360px;
+}
+
+.fp-section {
+  margin-bottom: 12px;
+}
+
+.fp-section:last-child {
+  margin-bottom: 0;
+}
+
+.fp-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ctp-subtext0);
+  font-family: 'Cascadia Mono', monospace;
+  margin-bottom: 6px;
+}
+
+.fp-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.fp-chip {
+  padding: 4px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--ctp-surface2);
+  background: transparent;
+  color: var(--ctp-text);
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.fp-chip:hover {
+  background: var(--ctp-surface0);
+}
+
+.fp-chip--on {
+  background: var(--ctp-blue);
+  border-color: var(--ctp-blue);
+  color: var(--ctp-base);
+}
+
+.fp-chip--on:hover {
+  background: var(--ctp-sapphire);
+  border-color: var(--ctp-sapphire);
+}
+
+.fp-select {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--ctp-surface1);
+  background: var(--ctp-surface0);
+  color: var(--ctp-text);
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.fp-select:focus {
+  outline: none;
+  border-color: var(--ctp-blue);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ctp-blue) 25%, transparent);
+}
+
+/* Actions */
+.fp-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ctp-surface0);
+}
+
+.fp-btn {
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: none;
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  transition: opacity 0.12s;
+}
+
+.fp-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.fp-btn--reset {
+  background: var(--ctp-surface1);
+  color: var(--ctp-text);
+}
+
+.fp-btn--reset:hover:not(:disabled) {
+  background: var(--ctp-surface2);
+}
+
+.fp-btn--save {
+  background: var(--ctp-green);
+  color: var(--ctp-base);
+}
+
+.fp-btn--save:hover:not(:disabled) {
+  opacity: 0.85;
+}
+
+.fp-save-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+}
+
+.fp-save-input {
+  flex: 1;
+  padding: 5px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--ctp-surface1);
+  background: var(--ctp-surface0);
+  color: var(--ctp-text);
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.fp-save-input:focus {
+  outline: none;
+  border-color: var(--ctp-blue);
+}
+
+/* Saved filter list */
+.fp-saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fp-saved-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fp-saved-name {
+  flex: 1;
+  text-align: left;
+  background: var(--ctp-surface0);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--ctp-text);
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+
+.fp-saved-name:hover {
+  background: var(--ctp-surface1);
+  border-color: var(--ctp-blue);
+}
+
+.fp-saved-del {
+  background: none;
+  border: none;
+  color: var(--ctp-subtext1);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 4px;
+  flex-shrink: 0;
+  transition: color 0.12s;
+}
+
+.fp-saved-del:hover {
+  color: var(--ctp-red);
+}

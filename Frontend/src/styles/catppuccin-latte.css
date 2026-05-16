@@ -1,0 +1,192 @@
+/*
+  Catppuccin Latte — warm light variant
+  ─────────────────────────────────────
+  Orijinal Latte'nin soğuk mavi-gri tabanı yerine
+  hafif krem/sıcak ton kullanılır; parlak aksanlar
+  biraz söndürülür → uzun süreli kullanımda göz yorgunluğu azalır.
+*/
+[data-theme="latte"] {
+
+  /* ── Arka planlar (krem-sıcak) ─────────────── */
+  --ctp-base:   #f5f0e9;  /* ana sayfa zemini — ılık krem */
+  --ctp-mantle: #ece7de;  /* kart / sidebar arka planı */
+  --ctp-crust:  #ded9cf;  /* derin gölge / sınır rengi */
+
+  /* ── Metin renkleri ─────────────────────────── */
+  --ctp-text:     #3d4060;  /* ana metin — koyu, hafif mor-gri */
+  --ctp-subtext0: #636682;  /* ikincil metin */
+  --ctp-subtext1: #525572;  /* biraz daha koyu ikincil */
+
+  /* ── Yüzey renkleri (ılık gri) ─────────────── */
+  --ctp-surface0: #d5d0c7;  /* etkileşimli yüzeyler */
+  --ctp-surface1: #c3beb5;  /* biraz daha koyu */
+  --ctp-surface2: #b0aba2;  /* en koyu yüzey */
+
+  /* ── Örtü (overlay) renkleri ───────────────── */
+  --ctp-overlay0: #9c9892;
+  --ctp-overlay1: #8d8985;
+  --ctp-overlay2: #7d7975;
+
+  /* ── Vurgu renkleri (hafif söndürülmüş) ────── */
+  --ctp-blue:      #1f5ccc;  /* orijinal #1e66f5 → biraz daha sakin */
+  --ctp-lavender:  #6576e8;
+  --ctp-sapphire:  #1890a4;
+  --ctp-sky:       #0393cc;
+  --ctp-teal:      #138888;
+  --ctp-green:     #37922a;  /* kontrast için biraz koyulaştırıldı */
+  --ctp-yellow:    #b87810;  /* soluk değil, ılık sarı */
+  --ctp-peach:     #dd5509;
+  --ctp-maroon:    #cc3c4a;
+  --ctp-red:       #be1035;  /* daha az neon, okunur kırmızı */
+  --ctp-mauve:     #7030d8;
+  --ctp-pink:      #d060b4;
+  --ctp-flamingo:  #c46868;
+  --ctp-rosewater: #c07268;
+
+  /* ── Görev durum renkleri ───────────────────── */
+  --ctp-status-open:        var(--ctp-yellow);
+  --ctp-status-in-progress: var(--ctp-blue);
+  --ctp-status-completed:   var(--ctp-green);
+  --ctp-status-postponed:   var(--ctp-peach);
+  --ctp-status-cancelled:   var(--ctp-overlay0);
+  --ctp-status-overdue:     var(--ctp-red);
+
+  /* ── Gölge token'ları — açık temada ılık, yumuşak ─── */
+  --ctp-shadow-xs:  0 1px 2px rgba(55, 45, 30, 0.08);
+  --ctp-shadow-sm:  0 1px 4px rgba(55, 45, 30, 0.10), 0 2px 6px rgba(55, 45, 30, 0.07);
+  --ctp-shadow-md:  0 3px 10px rgba(55, 45, 30, 0.12), 0 4px 16px rgba(55, 45, 30, 0.08);
+  --ctp-shadow-lg:  0 6px 24px rgba(55, 45, 30, 0.14), 0 10px 36px rgba(55, 45, 30, 0.10);
+  --ctp-shadow-hdr: 0 1px 3px rgba(55, 45, 30, 0.10);
+}
+
+/* ── Giriş ekranı arka planı — temadan bağımsız ──
+   Her iki temada da aynı mor→mavi gradyan korunur.  */
+[data-theme="latte"] .login-container {
+  background: linear-gradient(135deg, #cba6f7 0%, #89b4fa 100%);
+}
+
+/* ── Atanan kişi (avatar) override'ları ──────────
+   Açık temada var(--ctp-base) krem rengi olduğu için
+   avatar üzerindeki yazı beyaz olmalı.             */
+
+[data-theme="latte"] .assignee-chip__avatar,
+[data-theme="latte"] .assignee-option__avatar {
+  /* Koyu mavi→mor gradyan üzerine beyaz metin daha okunur */
+  color: #ffffff;
+}
+
+/* Chip arka planı ve kenarlığı açık temada çok soluk kalır;
+   Latte mavisine göre yeniden hesaplanmış değerler.       */
+[data-theme="latte"] .assignee-chip {
+  background: rgba(31, 92, 204, 0.10);
+  border-color: rgba(31, 92, 204, 0.25);
+}
+
+/* Focus halka rengi MultiSelect trigger'ında */
+[data-theme="latte"] .assignee-select.is-open .assignee-select__trigger,
+[data-theme="latte"] .assignee-select__trigger:focus-visible {
+  box-shadow: 0 0 0 2px rgba(31, 92, 204, 0.22);
+}
+
+/* Seçili seçenek arka planı */
+[data-theme="latte"] .assignee-option.is-checked {
+  background: rgba(31, 92, 204, 0.10);
+}
+
+/* Arama alanı focus */
+[data-theme="latte"] .assignee-select__search:focus {
+  background: rgba(31, 92, 204, 0.05);
+}
+
+/* Dropdown panel gölgesi açık temada çok sert */
+[data-theme="latte"] .assignee-select__panel {
+  box-shadow: 0 8px 24px rgba(55, 45, 30, 0.14), 0 2px 6px rgba(55, 45, 30, 0.08);
+}
+
+/* ── Takvim "Bugün" hücresi override'ları ─────
+   rgba(137,180,250,...) Mocha mavisidir;
+   Latte mavisi rgb(31,92,204) ile değiştirilir.  */
+
+[data-theme="latte"] .calendar-day.today {
+  background: linear-gradient(
+    135deg,
+    rgba(31, 92, 204, 0.10) 0%,
+    rgba(31, 92, 204, 0.03) 100%
+  );
+  box-shadow: inset 0 0 20px rgba(31, 92, 204, 0.08);
+}
+
+[data-theme="latte"] .calendar-grid {
+  box-shadow: 0 2px 10px rgba(55, 45, 30, 0.12);
+}
+
+/* ── Takvim kart içindeki görev gölgeleri ───── */
+[data-theme="latte"] .calendar-day-tasks .task-card {
+  box-shadow: var(--ctp-shadow-xs);
+}
+
+[data-theme="latte"] .calendar-day-tasks .task-card:hover {
+  box-shadow: var(--ctp-shadow-sm);
+}
+
+/* ── Ay kartı gölgeleri ──────────────────────── */
+[data-theme="latte"] .month-card.current-month {
+  box-shadow: var(--ctp-shadow-sm);
+}
+
+[data-theme="latte"] .month-card:hover {
+  box-shadow: var(--ctp-shadow-md);
+}
+
+/* ── Açık temaya özel gölge override'ları ─────
+   Bileşenler genellikle rgba(0,0,0,...) kullanır;
+   açık zeminde çok koyu görünür, burada ezilir.   */
+
+[data-theme="latte"] .header {
+  box-shadow: var(--ctp-shadow-hdr);
+}
+
+[data-theme="latte"] .sidebar {
+  box-shadow: 2px 0 8px rgba(55, 45, 30, 0.08);
+}
+
+[data-theme="latte"] .stat-card,
+[data-theme="latte"] .month-card,
+[data-theme="latte"] .week-card {
+  box-shadow: var(--ctp-shadow-sm);
+}
+
+[data-theme="latte"] .task-card {
+  box-shadow: var(--ctp-shadow-sm);
+}
+
+[data-theme="latte"] .task-card:hover {
+  box-shadow: var(--ctp-shadow-md);
+}
+
+[data-theme="latte"] .month-card:hover {
+  box-shadow: var(--ctp-shadow-md);
+}
+
+[data-theme="latte"] .login-box,
+[data-theme="latte"] .not-found-content,
+[data-theme="latte"] .error-page-card {
+  box-shadow: var(--ctp-shadow-lg);
+}
+
+/* Görev badge'leri açık temada daha koyu metin kullanır */
+[data-theme="latte"] .task-status-badge {
+  color: #ffffff;
+}
+
+/* Checkbox'lar açık zeminde göze batsın diye kenarlık koyulaştırıldı */
+[data-theme="latte"] input[type="checkbox"] {
+  border-color: var(--ctp-surface2);
+}
+
+/* Giriş alanlarında arka plan çok beyaz görünmesin */
+[data-theme="latte"] .form-input,
+[data-theme="latte"] .year-selector select {
+  background-color: var(--ctp-base);
+  border-color: var(--ctp-surface1);
+}

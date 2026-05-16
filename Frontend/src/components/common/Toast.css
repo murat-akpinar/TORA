@@ -1,0 +1,108 @@
+.toast-stack {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--ctp-mantle, #181825);
+  color: var(--ctp-text, #cdd6f4);
+  border: 1px solid var(--ctp-surface1, #45475a);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  pointer-events: auto;
+  animation: toast-in 180ms ease-out;
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.toast-icon {
+  flex: 0 0 24px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.toast-icon-success { background: rgba(166, 227, 161, 0.18); color: #a6e3a1; }
+.toast-icon-error   { background: rgba(243, 139, 168, 0.18); color: #f38ba8; }
+.toast-icon-info    { background: rgba(137, 180, 250, 0.18); color: #89b4fa; }
+.toast-icon-warning { background: rgba(250, 179, 135, 0.18); color: #fab387; }
+
+.toast-success { border-left: 3px solid #a6e3a1; }
+.toast-error   { border-left: 3px solid #f38ba8; }
+.toast-info    { border-left: 3px solid #89b4fa; }
+.toast-warning { border-left: 3px solid #fab387; }
+
+.toast-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.toast-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--ctp-subtext0, #a6adc8);
+}
+
+.toast-message {
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: var(--ctp-subtext0, #a6adc8);
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.toast-close:hover,
+.toast-close:focus-visible {
+  color: var(--ctp-text, #cdd6f4);
+  background: rgba(255, 255, 255, 0.06);
+  outline: none;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .toast-stack {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    max-width: none;
+  }
+}

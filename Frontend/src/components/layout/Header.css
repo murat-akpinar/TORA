@@ -1,0 +1,249 @@
+.header {
+  background-color: var(--ctp-mantle);
+  border-bottom: 1px solid var(--ctp-surface0);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* ── Mobile hamburger (inside header) ────── */
+.header-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  color: var(--ctp-text);
+  cursor: pointer;
+  transition: background-color 0.15s;
+}
+
+.header-menu-btn:hover {
+  background-color: var(--ctp-surface0);
+}
+
+.header-menu-btn:focus-visible {
+  outline: 2px solid var(--ctp-blue);
+  outline-offset: 2px;
+}
+
+/* ── Year selector ────────────────────────── */
+.year-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.year-selector label {
+  font-weight: 600;
+  color: var(--ctp-text);
+  white-space: nowrap;
+}
+
+.year-selector select {
+  padding: 7px 10px;
+  border: 1px solid var(--ctp-surface0);
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  background-color: var(--ctp-surface0);
+  color: var(--ctp-text);
+  font-family: 'Cascadia Mono', monospace;
+  transition: border-color 0.15s;
+}
+
+.year-selector select:focus-visible {
+  outline: 2px solid var(--ctp-blue);
+  outline-offset: 2px;
+  border-color: var(--ctp-blue);
+}
+
+/* ── Right-side user info cluster ─────────── */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Theme toggle ─────────────────────────── */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  background: var(--ctp-surface0);
+  color: var(--ctp-text);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Cascadia Mono', monospace;
+  transition: background-color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.theme-toggle-btn:hover {
+  background-color: var(--ctp-surface1);
+  border-color: var(--ctp-surface2);
+}
+
+.theme-toggle-btn:focus-visible {
+  outline: 2px solid var(--ctp-blue);
+  outline-offset: 2px;
+}
+
+.theme-toggle-label {
+  font-size: 12px;
+  color: var(--ctp-subtext1);
+}
+
+/* ── Admin panel button ───────────────────── */
+.admin-panel-btn {
+  padding: 7px 14px;
+  background-color: var(--ctp-blue);
+  color: var(--ctp-base);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: 'Cascadia Mono', monospace;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.admin-panel-btn:hover {
+  background-color: var(--ctp-sapphire);
+}
+
+.admin-panel-btn:focus-visible {
+  outline: 2px solid var(--ctp-blue);
+  outline-offset: 2px;
+}
+
+/* ── User profile section (now a button) ──── */
+.user-profile-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: none;
+  border: none;
+  font-family: 'Cascadia Mono', monospace;
+  transition: background-color 0.15s;
+}
+
+.user-profile-section:hover {
+  background-color: var(--ctp-surface0);
+}
+
+.user-profile-section:focus-visible {
+  outline: 2px solid var(--ctp-blue);
+  outline-offset: 2px;
+}
+
+.user-name {
+  font-weight: 500;
+  color: var(--ctp-text);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.user-role {
+  font-size: 11px;
+  color: var(--ctp-subtext1);
+  font-style: italic;
+  margin-top: 1px;
+}
+
+/* ── Logout button ───────────────────────── */
+.logout-btn {
+  padding: 7px 14px;
+  background-color: var(--ctp-red);
+  color: var(--ctp-base);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: 'Cascadia Mono', monospace;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.logout-btn:hover {
+  background-color: var(--ctp-maroon);
+}
+
+.logout-btn:focus-visible {
+  outline: 2px solid var(--ctp-red);
+  outline-offset: 2px;
+}
+
+/* ── Tablet: 900px ───────────────────────── */
+@media (max-width: 900px) {
+  .header {
+    padding: 10px 16px;
+    gap: 8px;
+  }
+
+  .theme-toggle-label {
+    display: none;
+  }
+
+  .admin-panel-btn {
+    font-size: 12px;
+    padding: 6px 10px;
+  }
+
+  .user-name {
+    font-size: 13px;
+  }
+}
+
+/* ── Mobile: 768px ───────────────────────── */
+@media (max-width: 768px) {
+  .header {
+    padding: 8px 12px;
+  }
+
+  .header-menu-btn {
+    display: flex;
+  }
+
+  .year-selector label {
+    display: none;
+  }
+
+  .user-role {
+    display: none;
+  }
+
+  .admin-panel-btn {
+    display: none;
+  }
+}
+
+/* ── Small mobile: 480px ─────────────────── */
+@media (max-width: 480px) {
+  .theme-toggle-btn {
+    padding: 6px 8px;
+  }
+
+  .logout-btn,
+  .admin-panel-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}

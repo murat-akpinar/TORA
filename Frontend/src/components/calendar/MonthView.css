@@ -1,0 +1,174 @@
+/* ═══════════════════════════════════════════════
+   MonthView — card grid
+   ═══════════════════════════════════════════════ */
+.month-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  padding: 20px;
+}
+
+@media (max-width: 1400px) { .month-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 1000px) { .month-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .month-grid { grid-template-columns: 1fr; padding: 12px; gap: 10px; } }
+
+/* ── Card ─────────────────────────────────────── */
+.month-card {
+  background: var(--ctp-surface0);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid var(--ctp-surface1);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  outline: none;
+}
+
+.month-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+}
+
+.month-card.current-month {
+  border-color: var(--ctp-blue);
+  box-shadow: 0 0 0 1px var(--ctp-blue), 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.month-card:focus-visible {
+  box-shadow: 0 0 0 2px var(--ctp-blue);
+}
+
+/* ── Colored top accent strip ─────────────────── */
+.month-accent-bar {
+  height: 3px;
+  width: 100%;
+}
+
+/* ── Content area ─────────────────────────────── */
+.month-card-inner {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Header: name + badge ─────────────────────── */
+.month-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.month-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ctp-subtext1);
+}
+
+.month-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 20px;
+  background: rgba(137, 180, 250, 0.15);
+  color: var(--ctp-blue);
+  border: 1px solid rgba(137, 180, 250, 0.3);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Big task count ───────────────────────────── */
+.month-count-row {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+
+.month-count-number {
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--ctp-text);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.month-count-unit {
+  font-size: 14px;
+  color: var(--ctp-subtext0);
+  font-weight: 500;
+}
+
+/* ── Progress bar ─────────────────────────────── */
+.month-progress-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.month-progress-track {
+  flex: 1;
+  height: 4px;
+  background: var(--ctp-surface1);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.month-progress-fill {
+  height: 100%;
+  background: var(--ctp-green);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+
+.month-progress-pct {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ctp-subtext0);
+  min-width: 28px;
+  text-align: right;
+}
+
+/* ── Status pills ─────────────────────────────── */
+.month-pills {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.mpill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+.mpill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mpill-open {
+  background: rgba(166, 173, 200, 0.12);
+  color: var(--ctp-subtext0);
+}
+.mpill-open .mpill-dot { background: var(--ctp-subtext0); }
+
+.mpill-prog {
+  background: rgba(249, 226, 175, 0.12);
+  color: var(--ctp-yellow);
+}
+.mpill-prog .mpill-dot { background: var(--ctp-yellow); }
+
+.mpill-done {
+  background: rgba(166, 227, 161, 0.12);
+  color: var(--ctp-green);
+}
+.mpill-done .mpill-dot { background: var(--ctp-green); }

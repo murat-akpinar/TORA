@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- task_assignees: user_id tarafından sorgu (atandığım görevler) -->
+    <changeSet id="idx_task_assignees_user_id" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="task_assignees" indexName="idx_task_assignees_user_id"/></not>
+        </preConditions>
+        <createIndex indexName="idx_task_assignees_user_id" tableName="task_assignees">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- tasks: oluşturan kullanıcıya göre sorgu -->
+    <changeSet id="idx_tasks_created_by" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="tasks" indexName="idx_tasks_created_by"/></not>
+        </preConditions>
+        <createIndex indexName="idx_tasks_created_by" tableName="tasks">
+            <column name="created_by"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- tasks: birim + durum bileşik sorgu (dashboard stats) -->
+    <changeSet id="idx_tasks_team_status" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="tasks" indexName="idx_tasks_team_status"/></not>
+        </preConditions>
+        <createIndex indexName="idx_tasks_team_status" tableName="tasks">
+            <column name="team_id"/>
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

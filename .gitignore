@@ -1,0 +1,41 @@
+# Maven
+Backend/target/
+Backend/.mvn/
+Backend/*.iml
+Backend/.idea/
+
+# Node
+Frontend/node_modules/
+Frontend/dist/
+Frontend/.vite/
+Frontend/*.log
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+
+# Logs
+*.log
+
+# LDAP test data (Docker volumes)
+ldap_test/ldap_config/
+ldap_test/ldap_data/
+ldap_test/ldif/
+
+
+# AI
+.agent/
+.cursor/
+ruvector.db
+.claude

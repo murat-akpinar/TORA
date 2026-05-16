@@ -1,0 +1,51 @@
+.notification-bell {
+  position: relative;
+  display: inline-block;
+}
+
+.notification-bell__button {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--ctp-surface1, #45475a);
+  color: var(--ctp-text, #cdd6f4);
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.notification-bell__button:hover,
+.notification-bell__button:focus-visible {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--ctp-blue, #89b4fa);
+  border-color: var(--ctp-blue, #89b4fa);
+  outline: none;
+}
+
+.notification-bell__button.has-unread {
+  color: var(--ctp-blue, #89b4fa);
+  border-color: rgba(137, 180, 250, 0.4);
+}
+
+.notification-bell__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--ctp-red, #f38ba8);
+  color: var(--ctp-base, #1e1e2e);
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cascadia Mono', monospace;
+  line-height: 1;
+}

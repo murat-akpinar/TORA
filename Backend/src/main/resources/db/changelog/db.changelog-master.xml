@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+    
+    <include file="db/changelog/changes/V1__initial_schema.xml"/>
+    <include file="db/changelog/changes/V2__seed_data.xml"/>
+    <include file="db/changelog/changes/V3__add_password_to_users.xml"/>
+    <include file="db/changelog/changes/V4__create_admin_user.xml"/>
+    <include file="db/changelog/changes/V5__add_subtask_fields.xml"/>
+    <include file="db/changelog/changes/V6__add_task_type_and_priority.xml"/>
+    <include file="db/changelog/changes/V7__add_team_color_and_icon.xml"/>
+    <include file="db/changelog/changes/V8__add_projects.xml"/>
+    <include file="db/changelog/changes/V10__rename_daire_baskani_to_admin.xml"/>
+    <include file="db/changelog/changes/V11__create_ldap_settings.xml"/>
+    <include file="db/changelog/changes/V12__create_login_attempts.xml"/>
+    <include file="db/changelog/changes/V13__create_system_logs.xml"/>
+    <include file="db/changelog/changes/V14__create_task_logs.xml"/>
+    <include file="db/changelog/changes/V15__rename_teams_to_birim.xml"/>
+    <include file="db/changelog/changes/V16__task_logs_preserve_deleted_task.xml"/>
+    <include file="db/changelog/changes/V17__add_departments.xml"/>
+    <include file="db/changelog/changes/V18__remove_postponed_overdue_statuses.xml"/>
+    <include file="db/changelog/changes/V19__create_task_comments.xml"/>
+    <include file="db/changelog/changes/V20__create_notifications.xml"/>
+    <include file="db/changelog/changes/V21__remove_admin_from_teams.xml"/>
+    <include file="db/changelog/changes/V22__add_task_labels.xml"/>
+    <include file="db/changelog/changes/V23__performance_indexes.xml"/>
+    <include file="db/changelog/changes/V24__add_project_manager.xml"/>
+    <include file="db/changelog/changes/V25__performance_index_start_date.xml"/>
+    <include file="db/changelog/changes/V26__search_indexes.xml"/>
+    <include file="db/changelog/changes/V27__saved_filters.xml"/>
+
+</databaseChangeLog>
+

@@ -1,0 +1,104 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: tora-db
+    # -e: script içinde CRLF olsa bile "set -e" satırına takılmaz
+    entrypoint: ["/bin/sh", "-e", "/entrypoint-wrapper.sh"]
+    environment:
+      POSTGRES_DB: projectspring
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/entrypoint-wrapper.sh:/entrypoint-wrapper.sh:ro
+      - ./db/init:/docker-entrypoint-initdb.d:ro
+    shm_size: '256mb'
+    restart: unless-stopped
+    healthcheck:
+      # İlk kurulum (init scriptleri) uzun sürebilir; start_period ile erken "unhealthy" önlenir.
+      test: ["CMD-SHELL", "pg_isready -U postgres -d projectspring || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 90s
+    networks:
+      - tora-network
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: tora-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: projectspring
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      SEED_SAMPLE_DATA: ${SEED_SAMPLE_DATA}
+      FRONTEND_URL: ${FRONTEND_URL:-http://frontend:8080}
+    ports:
+      - "8081:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    networks:
+      - tora-network
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: tora-frontend
+    ports:
+      - "81:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    networks:
+      - tora-network
+
+  # Nginx load balancer (optional, for production scaling)
+  # Uncomment to use nginx as load balancer
+  # nginx:
+  #   image: nginx:alpine
+  #   container_name: tora-nginx
+  #   ports:
+  #     - "8000:80"
+  #   volumes:
+  #     - ./nginx.conf:/etc/nginx/nginx.conf:ro
+  #   depends_on:
+  #     - backend
+  #     - frontend
+  #   networks:
+  #     - tora-network
+
+volumes:
+  postgres_data:
+
+networks:
+  tora-network:
+    driver: bridge
+

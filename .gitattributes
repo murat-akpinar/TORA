@@ -1,0 +1,2 @@
+# Windows CRLF, shell entrypoint ve init scriptlerini kırar (unhealthy postgres).
+*.sh text eol=lf

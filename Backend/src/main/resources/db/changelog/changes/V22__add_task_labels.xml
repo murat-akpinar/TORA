@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="create_task_labels_table" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="task_labels"/></not>
+        </preConditions>
+        <createTable tableName="task_labels">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="color" type="VARCHAR(7)" defaultValue="#89dceb">
+                <constraints nullable="false"/>
+            </column>
+            <column name="team_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_task_labels_team"
+                             references="teams(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="task_labels"
+                             columnNames="name, team_id"
+                             constraintName="uq_task_labels_name_team"/>
+        <createIndex indexName="idx_task_labels_team_id" tableName="task_labels">
+            <column name="team_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="create_task_label_assignments_table" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><tableExists tableName="task_label_assignments"/></not>
+        </preConditions>
+        <createTable tableName="task_label_assignments">
+            <column name="task_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_label_assign_task"
+                             references="tasks(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="label_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_label_assign_label"
+                             references="task_labels(id)"
+                             deleteCascade="true"/>
+            </column>
+        </createTable>
+        <addPrimaryKey tableName="task_label_assignments"
+                       columnNames="task_id, label_id"
+                       constraintName="pk_task_label_assignments"/>
+        <createIndex indexName="idx_label_assign_task_id" tableName="task_label_assignments">
+            <column name="task_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="migrate_task_type_to_labels" author="system">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="tasks" columnName="task_type"/>
+            <tableExists tableName="task_labels"/>
+        </preConditions>
+        <!-- Seed one label per unique (task_type, team_id) combination -->
+        <sql>
+            INSERT INTO task_labels (name, color, team_id)
+            SELECT DISTINCT
+                CASE task_type
+                    WHEN 'TASK'          THEN 'Görev'
+                    WHEN 'FEATURE'       THEN 'Özellik'
+                    WHEN 'BUG'           THEN 'Hata'
+                    WHEN 'IMPROVEMENT'   THEN 'İyileştirme'
+                    WHEN 'RESEARCH'      THEN 'Araştırma'
+                    WHEN 'DOCUMENTATION' THEN 'Dokümantasyon'
+                    WHEN 'TEST'          THEN 'Test'
+                    WHEN 'MAINTENANCE'   THEN 'Bakım'
+                    WHEN 'MEETING'       THEN 'Toplantı'
+                    ELSE task_type
+                END,
+                CASE task_type
+                    WHEN 'TASK'          THEN '#89b4fa'
+                    WHEN 'FEATURE'       THEN '#a6e3a1'
+                    WHEN 'BUG'           THEN '#f38ba8'
+                    WHEN 'IMPROVEMENT'   THEN '#fab387'
+                    WHEN 'RESEARCH'      THEN '#cba6f7'
+                    WHEN 'DOCUMENTATION' THEN '#89dceb'
+                    WHEN 'TEST'          THEN '#f9e2af'
+                    WHEN 'MAINTENANCE'   THEN '#74c7ec'
+                    WHEN 'MEETING'       THEN '#b4befe'
+                    ELSE '#89dceb'
+                END,
+                team_id
+            FROM tasks
+            WHERE task_type IS NOT NULL
+            ON CONFLICT (name, team_id) DO NOTHING;
+        </sql>
+        <!-- Link each task to its migrated label -->
+        <sql>
+            INSERT INTO task_label_assignments (task_id, label_id)
+            SELECT t.id, tl.id
+            FROM tasks t
+            JOIN task_labels tl
+              ON tl.team_id = t.team_id
+             AND tl.name = CASE t.task_type
+                    WHEN 'TASK'          THEN 'Görev'
+                    WHEN 'FEATURE'       THEN 'Özellik'
+                    WHEN 'BUG'           THEN 'Hata'
+                    WHEN 'IMPROVEMENT'   THEN 'İyileştirme'
+                    WHEN 'RESEARCH'      THEN 'Araştırma'
+                    WHEN 'DOCUMENTATION' THEN 'Dokümantasyon'
+                    WHEN 'TEST'          THEN 'Test'
+                    WHEN 'MAINTENANCE'   THEN 'Bakım'
+                    WHEN 'MEETING'       THEN 'Toplantı'
+                    ELSE t.task_type
+                END
+            WHERE t.task_type IS NOT NULL
+            ON CONFLICT (task_id, label_id) DO NOTHING;
+        </sql>
+    </changeSet>
+
+    <changeSet id="make_task_type_nullable" author="system">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="tasks" columnName="task_type"/>
+        </preConditions>
+        <dropNotNullConstraint tableName="tasks"
+                               columnName="task_type"
+                               columnDataType="VARCHAR(20)"/>
+    </changeSet>
+
+</databaseChangeLog>

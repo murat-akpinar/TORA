@@ -1,0 +1,117 @@
+.error-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--ctp-base);
+  padding: 20px;
+}
+
+.error-page-card {
+  text-align: center;
+  max-width: 600px;
+  width: 100%;
+  padding: 48px 40px;
+  background: var(--ctp-mantle);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--ctp-surface0);
+}
+
+.error-page-icon {
+  font-size: 56px;
+  line-height: 1;
+  margin-bottom: 12px;
+}
+
+.error-page-code {
+  font-size: 96px;
+  font-weight: bold;
+  color: var(--ctp-blue);
+  line-height: 1;
+  margin-bottom: 16px;
+  font-family: 'Cascadia Mono', monospace;
+  letter-spacing: -2px;
+}
+
+.error-page-title {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--ctp-text);
+  margin-bottom: 12px;
+}
+
+.error-page-message {
+  font-size: 16px;
+  color: var(--ctp-subtext1);
+  margin-bottom: 8px;
+  line-height: 1.6;
+}
+
+.error-page-detail {
+  font-size: 14px;
+  color: var(--ctp-subtext0);
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.error-page-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.error-page-btn {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.15s, box-shadow 0.15s;
+  font-family: 'Cascadia Mono', monospace;
+}
+
+.error-page-btn:focus-visible {
+  outline: 2px solid var(--ctp-blue);
+  outline-offset: 3px;
+}
+
+.error-page-btn-primary {
+  background-color: var(--ctp-blue);
+  color: var(--ctp-base);
+}
+
+.error-page-btn-primary:hover {
+  background-color: var(--ctp-sapphire);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(30, 102, 245, 0.35);
+}
+
+.error-page-btn-secondary {
+  background-color: var(--ctp-surface0);
+  color: var(--ctp-text);
+}
+
+.error-page-btn-secondary:hover {
+  background-color: var(--ctp-surface1);
+}
+
+@media (max-width: 768px) {
+  .error-page-card {
+    padding: 32px 24px;
+  }
+
+  .error-page-code {
+    font-size: 72px;
+  }
+
+  .error-page-title {
+    font-size: 22px;
+  }
+
+  .error-page-icon {
+    font-size: 44px;
+  }
+}

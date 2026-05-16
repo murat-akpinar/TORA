@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- tasks: birim + başlangıç tarihi bileşik index — yıl/ay filtreleri için -->
+    <changeSet id="idx_tasks_team_start_date" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="tasks" indexName="idx_tasks_team_start_date"/></not>
+        </preConditions>
+        <createIndex indexName="idx_tasks_team_start_date" tableName="tasks">
+            <column name="team_id"/>
+            <column name="start_date"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- tasks: proje + başlangıç tarihi bileşik index — proje bazlı yıl/ay filtreleri için -->
+    <changeSet id="idx_tasks_project_start_date" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not><indexExists tableName="tasks" indexName="idx_tasks_project_start_date"/></not>
+        </preConditions>
+        <createIndex indexName="idx_tasks_project_start_date" tableName="tasks">
+            <column name="project_id"/>
+            <column name="start_date"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

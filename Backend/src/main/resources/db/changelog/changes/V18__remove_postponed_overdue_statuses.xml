@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!--
+        Status setini sadeleştir:
+        Yeni set: OPEN, IN_PROGRESS, TESTING, COMPLETED, CANCELLED
+        POSTPONED ve OVERDUE değerleri IN_PROGRESS'e taşınır.
+        Tabloda yer alan postponed_to_date / postponed_from_date / is_postponed
+        kolonları geriye dönük uyumluluk için bırakılır (bir sonraki migrasyonda silinebilir).
+    -->
+
+    <changeSet id="migrate_tasks_status_postponed_overdue_to_in_progress" author="system">
+        <update tableName="tasks">
+            <column name="status" value="IN_PROGRESS"/>
+            <where>status IN ('POSTPONED', 'OVERDUE')</where>
+        </update>
+        <update tableName="tasks">
+            <column name="is_postponed" valueBoolean="false"/>
+            <where>is_postponed = true</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="migrate_task_status_history_old_status" author="system">
+        <update tableName="task_status_history">
+            <column name="old_status" value="IN_PROGRESS"/>
+            <where>old_status IN ('POSTPONED', 'OVERDUE')</where>
+        </update>
+    </changeSet>
+
+    <changeSet id="migrate_task_status_history_new_status" author="system">
+        <update tableName="task_status_history">
+            <column name="new_status" value="IN_PROGRESS"/>
+            <where>new_status IN ('POSTPONED', 'OVERDUE')</where>
+        </update>
+    </changeSet>
+
+</databaseChangeLog>

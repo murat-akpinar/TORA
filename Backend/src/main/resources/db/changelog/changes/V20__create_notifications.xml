@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="create_notifications_table" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="notifications"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="notifications">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_notifications_user"
+                             references="users(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="type" type="VARCHAR(50)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="title" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="message" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="related_task_id" type="BIGINT">
+                <constraints nullable="true"
+                             foreignKeyName="fk_notifications_task"
+                             references="tasks(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="related_comment_id" type="BIGINT">
+                <constraints nullable="true"
+                             foreignKeyName="fk_notifications_comment"
+                             references="task_comments(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="actor_user_id" type="BIGINT">
+                <constraints nullable="true"
+                             foreignKeyName="fk_notifications_actor"
+                             references="users(id)"/>
+            </column>
+            <column name="is_read" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="read_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_notifications_user_id" tableName="notifications">
+            <column name="user_id"/>
+        </createIndex>
+
+        <createIndex indexName="idx_notifications_user_unread" tableName="notifications">
+            <column name="user_id"/>
+            <column name="is_read"/>
+        </createIndex>
+
+        <createIndex indexName="idx_notifications_user_created" tableName="notifications">
+            <column name="user_id"/>
+            <column name="created_at"/>
+        </createIndex>
+
+        <createIndex indexName="idx_notifications_related_task" tableName="notifications">
+            <column name="related_task_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

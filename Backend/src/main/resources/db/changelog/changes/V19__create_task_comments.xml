@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Task üzerine yorum yapabilmek için tablolar -->
+
+    <changeSet id="create_task_comments_table" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="task_comments"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="task_comments">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="task_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_task_comments_task"
+                             references="tasks(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="author_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_task_comments_author"
+                             references="users(id)"/>
+            </column>
+            <column name="content" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_edited" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createIndex indexName="idx_task_comments_task_id" tableName="task_comments">
+            <column name="task_id"/>
+        </createIndex>
+        <createIndex indexName="idx_task_comments_author_id" tableName="task_comments">
+            <column name="author_id"/>
+        </createIndex>
+        <createIndex indexName="idx_task_comments_task_created" tableName="task_comments">
+            <column name="task_id"/>
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="create_task_comment_mentions_table" author="system">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="task_comment_mentions"/>
+            </not>
+        </preConditions>
+
+        <createTable tableName="task_comment_mentions">
+            <column name="comment_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_comment_mentions_comment"
+                             references="task_comments(id)"
+                             deleteCascade="true"/>
+            </column>
+            <column name="user_id" type="BIGINT">
+                <constraints nullable="false"
+                             foreignKeyName="fk_comment_mentions_user"
+                             references="users(id)"/>
+            </column>
+        </createTable>
+
+        <addPrimaryKey tableName="task_comment_mentions"
+                       columnNames="comment_id,user_id"
+                       constraintName="pk_task_comment_mentions"/>
+
+        <createIndex indexName="idx_comment_mentions_user" tableName="task_comment_mentions">
+            <column name="user_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
