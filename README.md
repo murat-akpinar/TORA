@@ -563,6 +563,3 @@ Admin panelinde "Loglar" sekmesi altında iki tür log görüntüleme sistemi bu
   - MonthView: Ekran boyutuna göre grid kolon sayısı ayarlanıyor
 - **Content Overflow Kontrolü**: Tüm görünümlerde ekrandan taşma sorunu çözüldü
 
-## Lisans
-
-GNU General Public License v3.0
