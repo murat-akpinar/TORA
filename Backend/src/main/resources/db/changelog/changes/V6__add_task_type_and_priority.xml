@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Add task_type and priority to tasks table -->
-    <changeSet id="add_task_type_and_priority" author="projectspring">
+    <changeSet id="add_task_type_and_priority" author="tora">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="tasks"/>
         </preConditions>

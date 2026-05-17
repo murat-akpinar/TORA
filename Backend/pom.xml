@@ -12,7 +12,7 @@
         <relativePath/>
     </parent>
     
-    <groupId>com.projectspring</groupId>
+    <groupId>com.tora</groupId>
     <artifactId>tora</artifactId>
     <version>1.0.0</version>
     <name>TORA</name>

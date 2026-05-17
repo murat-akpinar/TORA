@@ -45,7 +45,7 @@
 ```
 TORA/
 ├── Backend/
-│   ├── src/main/java/com/projectspring/
+│   ├── src/main/java/com/tora/
 │   │   ├── config/              # Configuration classes
 │   │   │   ├── SecurityConfig.java      # Spring Security filter chain, CORS, BCrypt
 │   │   │   ├── JwtConfig.java           # JWT secret validation on startup

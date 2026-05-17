@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Create LDAP Settings Table -->
-    <changeSet id="create_ldap_settings_table" author="projectspring">
+    <changeSet id="create_ldap_settings_table" author="tora">
         <createTable tableName="ldap_settings">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>

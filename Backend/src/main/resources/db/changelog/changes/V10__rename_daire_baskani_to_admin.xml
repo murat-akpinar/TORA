@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Rename DAIRE_BASKANI role to ADMIN -->
-    <changeSet id="rename_daire_baskani_to_admin" author="projectspring">
+    <changeSet id="rename_daire_baskani_to_admin" author="tora">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="roles"/>
         </preConditions>

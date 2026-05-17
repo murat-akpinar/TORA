@@ -49,7 +49,7 @@ networks:
   ldap-test-network:
     driver: bridge
   tora-network:
-    name: projectspring_tora-network
+    name: tora_tora-network
     external: true
 
 volumes:
