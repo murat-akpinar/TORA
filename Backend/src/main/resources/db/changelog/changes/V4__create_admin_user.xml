@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Create admin user -->
-    <changeSet id="create_admin_user" author="projectspring">
+    <changeSet id="create_admin_user" author="tora">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="users"/>
             <tableExists tableName="roles"/>
@@ -18,7 +18,7 @@
         <!-- Insert admin user -->
         <sql>
             INSERT INTO users (username, email, full_name, password, is_active, ldap_dn, created_at, updated_at)
-            VALUES ('admin', 'admin@projectspring.local', 'Administrator', 
+            VALUES ('admin', 'admin@tora.local', 'Administrator', 
                     '$2a$10$Xc4mHu6jFaGEQtCnhWZdouc8EfJN5yhhY/pdIhXJZBaIaVA/yPl/G', 
                     true, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT (username) DO NOTHING;

@@ -1,5 +1,13 @@
 # TORA
 
+[![License: GPL v3](https://img.shields.io/badge/license-GPL%20v3-1a1a1a?style=flat-square&labelColor=1a1a1a&color=8a6f3a)](LICENSE)
+[![Built with Claude Code](https://img.shields.io/badge/built%20with-Claude%20Code-1a1a1a?style=flat-square&labelColor=1a1a1a&color=d8b66b)](https://claude.com/claude-code)
+[![Status](https://img.shields.io/badge/status-active-1a1a1a?style=flat-square&labelColor=1a1a1a&color=4a9e6b)](https://github.com)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2-1a1a1a?style=flat-square&labelColor=1a1a1a&color=6db33f)](https://spring.io/projects/spring-boot)
+[![React](https://img.shields.io/badge/React-18-1a1a1a?style=flat-square&labelColor=1a1a1a&color=61dafb)](https://react.dev)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-1a1a1a?style=flat-square&labelColor=1a1a1a&color=336791)](https://www.postgresql.org)
+[![Docker](https://img.shields.io/badge/docker-ready-1a1a1a?style=flat-square&labelColor=1a1a1a&color=2496ed&logo=docker&logoColor=fff)](https://www.docker.com)
+
 TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
 
 ## Özellikler

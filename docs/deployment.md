@@ -70,7 +70,7 @@ CORS_ALLOWED_ORIGINS=https://your-domain.com
 | **Database** | | |
 | `DB_HOST` | `localhost` | PostgreSQL host |
 | `DB_PORT` | `5432` | PostgreSQL port |
-| `DB_NAME` | `projectspring` | Database name |
+| `DB_NAME` | `tora` | Database name |
 | `DB_USER` | `postgres` | Database user |
 | `DB_PASSWORD` | `postgres` | Database password |
 | **JWT** | | |
@@ -107,7 +107,7 @@ postgres:
   image: postgres:15-alpine
   entrypoint: ["/bin/sh", "/entrypoint-wrapper.sh"]
   environment:
-    POSTGRES_DB: projectspring
+    POSTGRES_DB: tora
     POSTGRES_USER: postgres
     POSTGRES_PASSWORD: postgres
   ports:
@@ -119,7 +119,7 @@ postgres:
   shm_size: '256mb'
   restart: unless-stopped
   healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U postgres && PGPASSWORD=postgres psql -U postgres -d projectspring -c 'SELECT 1' > /dev/null 2>&1"]
+    test: ["CMD-SHELL", "pg_isready -U postgres && PGPASSWORD=postgres psql -U postgres -d tora -c 'SELECT 1' > /dev/null 2>&1"]
     interval: 10s
 ```
 

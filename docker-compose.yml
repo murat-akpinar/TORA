@@ -5,7 +5,7 @@ services:
     # -e: script içinde CRLF olsa bile "set -e" satırına takılmaz
     entrypoint: ["/bin/sh", "-e", "/entrypoint-wrapper.sh"]
     environment:
-      POSTGRES_DB: projectspring
+      POSTGRES_DB: tora
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
@@ -18,7 +18,7 @@ services:
     restart: unless-stopped
     healthcheck:
       # İlk kurulum (init scriptleri) uzun sürebilir; start_period ile erken "unhealthy" önlenir.
-      test: ["CMD-SHELL", "pg_isready -U postgres -d projectspring || exit 1"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tora || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -34,7 +34,7 @@ services:
     environment:
       DB_HOST: postgres
       DB_PORT: 5432
-      DB_NAME: projectspring
+      DB_NAME: tora
       DB_USER: postgres
       DB_PASSWORD: postgres
       JWT_SECRET: ${JWT_SECRET}

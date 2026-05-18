@@ -8,7 +8,7 @@ Bu dizin, `test.local` domain'i için bir LDAP test ortamı içerir. LDAP sunucu
 - **Base DN**: dc=test,dc=local
 - **Admin DN**: cn=admin,dc=test,dc=local
 - **Admin Password**: admin123
-- **Network**: `projectspring_tora-network` (ana proje ile aynı network)
+- **Network**: `tora_tora-network` (ana proje ile aynı network)
 
 ## Servisler
 
@@ -29,7 +29,7 @@ Bu dizin, `test.local` domain'i için bir LDAP test ortamı içerir. LDAP sunucu
 
 **Önce ana projeyi başlatın:**
 ```bash
-cd /home/shyuuhei/GIT/ProjectSpring
+cd /GIT/TORA
 docker-compose up -d
 ```
 
@@ -78,7 +78,7 @@ Aşağıdaki test kullanıcıları otomatik olarak oluşturulur:
 docker exec -it ldap-test ldapsearch -x -H ldap://localhost -b dc=test,dc=local -D "cn=admin,dc=test,dc=local" -w admin123
 
 # Backend container'ından test
-docker exec projectspring-backend sh -c "apk add --no-cache openldap-clients && ldapsearch -x -H ldap://ldap-test:389 -b dc=test,dc=local -D 'cn=admin,dc=test,dc=local' -w admin123"
+docker exec tora-backend sh -c "apk add --no-cache openldap-clients && ldapsearch -x -H ldap://ldap-test:389 -b dc=test,dc=local -D 'cn=admin,dc=test,dc=local' -w admin123"
 
 # Dışarıdan test (eğer ldapsearch yüklüyse)
 ldapsearch -x -H ldap://localhost:389 -b dc=test,dc=local -D "cn=admin,dc=test,dc=local" -w admin123
@@ -86,7 +86,7 @@ ldapsearch -x -H ldap://localhost:389 -b dc=test,dc=local -D "cn=admin,dc=test,d
 
 ### 6. Spring Boot Uygulamasından Bağlanma
 
-**Önemli:** LDAP test sunucusu ana projenin Docker network'üne (`projectspring_tora-network`) bağlıdır. Bu sayede backend container'ı doğrudan `ldap-test:389` adresini kullanarak bağlanabilir.
+**Önemli:** LDAP test sunucusu ana projenin Docker network'üne (`tora_tora-network`) bağlıdır. Bu sayede backend container'ı doğrudan `ldap-test:389` adresini kullanarak bağlanabilir.
 
 **Docker Compose ile çalışırken:**
 
@@ -155,5 +155,5 @@ docker-compose down -v
 
 - LDAP verileri Docker volume'lerinde saklanır (`ldap_data`, `ldap_config`)
 - Yeni kullanıcılar için `init-ldap.sh` scriptini düzenleyebilir veya phpLDAPadmin üzerinden ekleyebilirsiniz
-- LDAP test sunucusu `projectspring_tora-network` network'üne bağlıdır, bu yüzden backend container'ı doğrudan `ldap-test:389` adresini kullanarak bağlanabilir
+- LDAP test sunucusu `tora_tora-network` network'üne bağlıdır, bu yüzden backend container'ı doğrudan `ldap-test:389` adresini kullanarak bağlanabilir
 - Ana projeyi başlatmadan önce LDAP test sunucusunu başlatmanız önerilir

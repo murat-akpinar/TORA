@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Create task_logs table for storing all task operations -->
-    <changeSet id="create_task_logs_table" author="projectspring">
+    <changeSet id="create_task_logs_table" author="tora">
         <comment>Create task_logs table to store all task operations (create, update, delete, status change, etc.)</comment>
         
         <createTable tableName="task_logs">

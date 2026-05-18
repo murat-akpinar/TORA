@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Rename team names from Ekibi to Birimi -->
-    <changeSet id="rename_teams_ekibi_to_birimi" author="projectspring">
+    <changeSet id="rename_teams_ekibi_to_birimi" author="tora">
         <update tableName="teams">
             <column name="name" value="Sistem Birimi"/>
             <column name="description" value="Sistem yönetimi ve altyapı birimi"/>
@@ -35,7 +35,7 @@
     </changeSet>
 
     <!-- Update role descriptions -->
-    <changeSet id="update_role_descriptions_birim" author="projectspring">
+    <changeSet id="update_role_descriptions_birim" author="tora">
         <update tableName="roles">
             <column name="description" value="Yönetici - Tüm birimleri görüntüleyebilir"/>
             <where>name = 'ADMIN'</where>

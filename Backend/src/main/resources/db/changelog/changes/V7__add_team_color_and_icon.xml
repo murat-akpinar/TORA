@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Add color and icon to teams table -->
-    <changeSet id="add_team_color_and_icon" author="projectspring">
+    <changeSet id="add_team_color_and_icon" author="tora">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="teams"/>
         </preConditions>

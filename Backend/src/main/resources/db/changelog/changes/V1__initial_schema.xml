@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Roles Table -->
-    <changeSet id="create_roles_table" author="projectspring">
+    <changeSet id="create_roles_table" author="tora">
         <createTable tableName="roles">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
@@ -22,7 +22,7 @@
     </changeSet>
     
     <!-- Users Table -->
-    <changeSet id="create_users_table" author="projectspring">
+    <changeSet id="create_users_table" author="tora">
         <createTable tableName="users">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
@@ -56,7 +56,7 @@
     </changeSet>
     
     <!-- Teams Table -->
-    <changeSet id="create_teams_table" author="projectspring">
+    <changeSet id="create_teams_table" author="tora">
         <createTable tableName="teams">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
@@ -84,7 +84,7 @@
     </changeSet>
     
     <!-- User Roles Table (Many-to-Many) -->
-    <changeSet id="create_user_roles_table" author="projectspring">
+    <changeSet id="create_user_roles_table" author="tora">
         <createTable tableName="user_roles">
             <column name="user_id" type="BIGINT">
                 <constraints nullable="false" foreignKeyName="fk_user_roles_user" references="users(id)" deleteCascade="true"/>
@@ -97,7 +97,7 @@
     </changeSet>
     
     <!-- User Teams Table (Many-to-Many) -->
-    <changeSet id="create_user_teams_table" author="projectspring">
+    <changeSet id="create_user_teams_table" author="tora">
         <createTable tableName="user_teams">
             <column name="user_id" type="BIGINT">
                 <constraints nullable="false" foreignKeyName="fk_user_teams_user" references="users(id)" deleteCascade="true"/>
@@ -110,7 +110,7 @@
     </changeSet>
     
     <!-- Tasks Table -->
-    <changeSet id="create_tasks_table" author="projectspring">
+    <changeSet id="create_tasks_table" author="tora">
         <createTable tableName="tasks">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
@@ -159,7 +159,7 @@
     </changeSet>
     
     <!-- Task Assignees Table (Many-to-Many) -->
-    <changeSet id="create_task_assignees_table" author="projectspring">
+    <changeSet id="create_task_assignees_table" author="tora">
         <createTable tableName="task_assignees">
             <column name="task_id" type="BIGINT">
                 <constraints nullable="false" foreignKeyName="fk_task_assignees_task" references="tasks(id)" deleteCascade="true"/>
@@ -172,7 +172,7 @@
     </changeSet>
     
     <!-- Subtasks Table -->
-    <changeSet id="create_subtasks_table" author="projectspring">
+    <changeSet id="create_subtasks_table" author="tora">
         <createTable tableName="subtasks">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
@@ -200,7 +200,7 @@
     </changeSet>
     
     <!-- Task Status History Table -->
-    <changeSet id="create_task_status_history_table" author="projectspring">
+    <changeSet id="create_task_status_history_table" author="tora">
         <createTable tableName="task_status_history">
             <column name="id" type="BIGSERIAL">
                 <constraints primaryKey="true" nullable="false"/>
@@ -230,7 +230,7 @@
     </changeSet>
     
     <!-- Update trigger for updated_at columns -->
-    <changeSet id="create_updated_at_trigger" author="projectspring">
+    <changeSet id="create_updated_at_trigger" author="tora">
         <sql splitStatements="false" stripComments="false">
             <![CDATA[
             CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -247,28 +247,28 @@
         </rollback>
     </changeSet>
     
-    <changeSet id="add_updated_at_trigger_users" author="projectspring">
+    <changeSet id="add_updated_at_trigger_users" author="tora">
         <sql>
             CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
         </sql>
     </changeSet>
     
-    <changeSet id="add_updated_at_trigger_teams" author="projectspring">
+    <changeSet id="add_updated_at_trigger_teams" author="tora">
         <sql>
             CREATE TRIGGER update_teams_updated_at BEFORE UPDATE ON teams
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
         </sql>
     </changeSet>
     
-    <changeSet id="add_updated_at_trigger_tasks" author="projectspring">
+    <changeSet id="add_updated_at_trigger_tasks" author="tora">
         <sql>
             CREATE TRIGGER update_tasks_updated_at BEFORE UPDATE ON tasks
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
         </sql>
     </changeSet>
     
-    <changeSet id="add_updated_at_trigger_subtasks" author="projectspring">
+    <changeSet id="add_updated_at_trigger_subtasks" author="tora">
         <sql>
             CREATE TRIGGER update_subtasks_updated_at BEFORE UPDATE ON subtasks
             FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

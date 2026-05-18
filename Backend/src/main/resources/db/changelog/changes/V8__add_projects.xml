@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Create projects table -->
-    <changeSet id="create_projects_table" author="projectspring">
+    <changeSet id="create_projects_table" author="tora">
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="projects"/>
@@ -63,7 +63,7 @@
     </changeSet>
     
     <!-- Create project_teams many-to-many table -->
-    <changeSet id="create_project_teams_table" author="projectspring">
+    <changeSet id="create_project_teams_table" author="tora">
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="project_teams"/>
@@ -105,7 +105,7 @@
     </changeSet>
     
     <!-- Add project_id to tasks table -->
-    <changeSet id="add_project_id_to_tasks" author="projectspring">
+    <changeSet id="add_project_id_to_tasks" author="tora">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="tasks"/>
             <not>

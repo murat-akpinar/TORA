@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Add fields to subtasks table -->
-    <changeSet id="add_subtask_fields" author="projectspring">
+    <changeSet id="add_subtask_fields" author="tora">
         <preConditions onFail="MARK_RAN">
             <tableExists tableName="subtasks"/>
         </preConditions>

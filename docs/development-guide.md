@@ -47,7 +47,7 @@ The frontend starts on `http://localhost:5173` (Vite dev server) with hot module
 ### Backend Package Structure
 
 ```
-com.projectspring/
+com.tora/
 ├── config/       # @Configuration classes (Security, JWT, etc.)
 ├── controller/   # @RestController classes (one per domain)
 ├── dto/          # Data Transfer Objects (request/response)
@@ -267,8 +267,8 @@ When you create a new controller, it is **automatically** logged by `LoggingAspe
 
 ```java
 // In LoggingAspect.java, add to the pointcut exclusion:
-@Around("execution(* com.projectspring.controller..*(..)) && " +
-        "!execution(* com.projectspring.controller.YourNewController.*(..))")
+@Around("execution(* com.tora.controller..*(..)) && " +
+        "!execution(* com.tora.controller.YourNewController.*(..))")
 ```
 
 ### Database Resilience

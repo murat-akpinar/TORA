@@ -6,7 +6,7 @@
     http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
     
     <!-- Insert Roles -->
-    <changeSet id="insert_roles" author="projectspring">
+    <changeSet id="insert_roles" author="tora">
         <insert tableName="roles">
             <column name="name" value="ADMIN"/>
             <column name="description" value="Yönetici - Tüm ekipleri görüntüleyebilir"/>
@@ -34,7 +34,7 @@
     </changeSet>
     
     <!-- Insert Teams -->
-    <changeSet id="insert_teams" author="projectspring">
+    <changeSet id="insert_teams" author="tora">
         <insert tableName="teams">
             <column name="name" value="Sistem Ekibi"/>
             <column name="description" value="Sistem yönetimi ve altyapı ekibi"/>
