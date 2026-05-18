@@ -10,6 +10,41 @@
 
 TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
 
+## Ekran Görüntüleri
+
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <img src="images/login-screen.png" alt="Giriş Ekranı" width="100%"/>
+      <br/><sub><b>Giriş Ekranı</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="images/dashboard-screen.png" alt="Dashboard" width="100%"/>
+      <br/><sub><b>Birim Dashboard</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="images/project-screen.png" alt="Proje Yönetimi" width="100%"/>
+      <br/><sub><b>Proje Yönetimi</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="images/report-screen.png" alt="Raporlar" width="100%"/>
+      <br/><sub><b>Raporlar</b></sub>
+    </td>
+  </tr>
+  <tr>
+    <td align="center" width="50%">
+      <img src="images/admin-screen.png" alt="Yönetim Paneli" width="100%"/>
+      <br/><sub><b>Yönetim Paneli</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="images/profile-screen.png" alt="Profil" width="100%"/>
+      <br/><sub><b>Profil</b></sub>
+    </td>
+  </tr>
+</table>
+
 ## Özellikler
 
 - **Çok Seviyeli Yetkilendirme**: Yönetici (ADMIN), Birim Amiri (BIRIM_AMIRI) ve Personel rolleri
