@@ -34,9 +34,13 @@ TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
     </td>
   </tr>
   <tr>
-    <td align="center" colspan="2">
-      <img src="images/admin-screen.png" alt="Yönetim Paneli" width="50%"/>
+    <td align="center" width="50%">
+      <img src="images/admin-screen.png" alt="Yönetim Paneli" width="100%"/>
       <br/><sub><b>Yönetim Paneli</b></sub>
+    </td>
+    <td align="center" width="50%">
+      <img src="images/profile-screen.png" alt="Profil" width="100%"/>
+      <br/><sub><b>Profil</b></sub>
     </td>
   </tr>
 </table>
