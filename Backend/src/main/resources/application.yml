@@ -77,7 +77,8 @@ app:
   frontend:
     url: ${FRONTEND_URL:http://frontend:80} # Frontend URL for health check (use service name in Docker)
   encryption:
-    key: ${ENCRYPTION_KEY:default-encryption-key-change-in-production-min-32-chars} # AES encryption key (min 32 chars)
+    key: ${ENCRYPTION_KEY:default-encryption-key-change-in-production-min-32-chars-long} # AES encryption key (min 32 chars)
+    salt: ${ENCRYPTION_SALT:Tora-v2} # KDF salt — production'da min 16 karakter rastgele değer kullanın
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:*} # Comma-separated list of allowed origins, or * for all (development only)
   logging:

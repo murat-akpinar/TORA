@@ -275,6 +275,43 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 
 ---
 
+## 🔴 Güvenlik Açıkları (Aktif Tarama — 2026-06-07)
+
+> Kod taramasıyla tespit edilmiş, doğrulanmış açıklar. Önem sırasına göre sıralanmıştır.  
+> Kural: Bu bölümdeki her madde kapatılmadan production'a yeni özellik deploy edilmez.
+
+### KRİTİK — Hemen Kapatılmalı
+
+- [x] **Kimlik doğrulamasız ADMIN kaydı** — `AuthController.java:259` + `SecurityConfig.java:71`  
+  `/api/auth/register` endpoint'i `permitAll()` ve `role` alanı kullanıcıdan geliyor; herkes `{"role":"ADMIN"}` ile admin hesabı açabiliyor.  
+  **Düzeltme:** `register` endpoint'ini `SecurityConfig`'den kaldır, `AdminController`'a taşı ve `@PreAuthorize("hasRole('ADMIN')")` ekle. Ya da `CreateLocalUserRequest.role` alanını kaldırıp sabit `USER` ata.
+
+- [ ] ~~**Varsayılan admin şifresi `admin/admin`**~~ — `V4__create_admin_user.xml:16` — **ATLANDI** (default olarak kalacak, kullanıcı kendi değiştirir)  
+  Liquibase migration'da bcrypt(`admin`) hash'i sabit gömülü; deploy edilen her ortamda bu hesap aktif.  
+  **Düzeltme:** Migration'dan şifreyi kaldır, `JWT_SECRET` gibi `ADMIN_INITIAL_PASSWORD` env değişkeninden al ve hash'i runtime'da `SampleDataInitializer` içinde oluştur. Ya da ilk girişte zorunlu şifre değiştir.
+
+### YÜKSEK — Bu Sprint İçinde Kapatılmalı
+
+- [x] **Kullanıcı listesi — email ifşası** — `AuthController.java:285`  
+  `GET /api/auth/users` endpoint'i task atama/mention için gerekmekte ancak email dahil hassas alanları herkese açıyordu.  
+  **Düzeltme:** `SimpleUserDTO` oluşturuldu; endpoint artık email döndürmuyor. `/api/admin/users` hâlâ tam bilgi veriyor.
+
+- [x] **Varsayılan JWT secret ve Encryption key** — `application.yml:55,80`  
+  `JWT_SECRET` ve `ENCRYPTION_KEY` env değişkeni set edilmezse bilinen default değerler kullanılıyordu.  
+  **Düzeltme:** `JwtConfig` ve `EncryptionService`'e `@PostConstruct` doğrulama eklendi; `ENFORCE_SECRET_VALIDATION=true` ile default değer tespitinde uygulama başlamıyor. Docker-compose dev'de `false`.
+
+### ORTA — Sonraki Sprint
+
+- [x] **LDAP auto-provisioning soft-delete bypass** — `LdapAuthService.java:239-243`  
+  Admin tarafından soft-delete edilen kullanıcı, LDAP hesabı hâlâ aktifse giriş yaparak eski rolleriyle reaktive oluyordu.  
+  **Düzeltme:** `syncUserFromLdap()` soft-deleted kullanıcıyı reaktive ederken artık tüm rolleri temizliyor; admin yeniden rol ataması yapmalı.
+
+- [x] **EncryptionService sabit KDF salt** — `EncryptionService.java:28`  
+  `KDF_SALT = "Tora-v2"` (7 byte) sabit ve NIST minimumunun (16 byte) altında.  
+  **Düzeltme:** `ENCRYPTION_SALT` env değişkeninden okunuyor; default `Tora-v2` geri uyumlu. Production'da `openssl rand -base64 16` ile özel salt set edilmeli.
+
+---
+
 ## 🐛 Teknik Borç & İyileştirmeler
 
 ### Kod Kalitesi

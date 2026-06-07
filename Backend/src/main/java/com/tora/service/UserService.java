@@ -69,13 +69,12 @@ public class UserService {
                !userOpt.get().getPassword().isEmpty();
     }
     
-    public List<com.tora.dto.UserDTO> getAllUsers() {
+    public List<com.tora.dto.SimpleUserDTO> getAllUsers() {
         return userRepository.findAll().stream()
             .map(user -> {
-                com.tora.dto.UserDTO dto = new com.tora.dto.UserDTO();
+                com.tora.dto.SimpleUserDTO dto = new com.tora.dto.SimpleUserDTO();
                 dto.setId(user.getId());
                 dto.setUsername(user.getUsername());
-                dto.setEmail(user.getEmail());
                 dto.setFullName(user.getFullName());
                 dto.setRoles(user.getRoles().stream()
                     .map(RoleEntity::getName)

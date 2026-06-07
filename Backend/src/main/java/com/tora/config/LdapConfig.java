@@ -37,8 +37,9 @@ public class LdapConfig {
             if (settingsOpt.isPresent()) {
                 LdapSettings settings = settingsOpt.get();
                 contextSource.setUrl(settings.getUrls());
-                // Don't set Base DN - it interferes with search operations
-                // Base DN will be used in search operations explicitly when needed
+                if (settings.getBase() != null && !settings.getBase().isEmpty()) {
+                    contextSource.setBase(settings.getBase());
+                }
                 
                 if (settings.getUsername() != null && !settings.getUsername().isEmpty()) {
                     contextSource.setUserDn(settings.getUsername());

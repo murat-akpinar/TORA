@@ -25,7 +25,6 @@ const LdapImport: React.FC = () => {
     isEnabled: false,
   });
   const [ldapPassword, setLdapPassword] = useState('');
-  const [testPassword, setTestPassword] = useState('');
   const [testingConnection, setTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<LdapTestResponse | null>(null);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -185,7 +184,7 @@ const LdapImport: React.FC = () => {
         urls: ldapSettings.urls,
         base: ldapSettings.base,
         username: ldapSettings.username || undefined,
-        password: testPassword || undefined,
+        password: ldapPassword || undefined,
         userSearchBase: ldapSettings.userSearchBase || undefined,
         userSearchFilter: ldapSettings.userSearchFilter || undefined,
       };
@@ -235,7 +234,6 @@ const LdapImport: React.FC = () => {
       await ldapSettingsService.updateLdapSettings(updateRequest);
       notify.success('LDAP ayarları başarıyla kaydedildi.');
       setLdapPassword('');
-      setTestPassword('');
       await fetchLdapSettings();
       setIsSettingsExpanded(false);
     } catch (error: any) {
@@ -270,7 +268,6 @@ const LdapImport: React.FC = () => {
                 onClick={() => {
                   setIsSettingsExpanded(false);
                   setLdapPassword('');
-                  setTestPassword('');
                 }}
               >
                 Kapat
@@ -349,24 +346,14 @@ const LdapImport: React.FC = () => {
           </div>
 
           <div className="form-group">
-            <label>Password (Test için)</label>
-            <input
-              type="password"
-              value={testPassword}
-              onChange={(e) => setTestPassword(e.target.value)}
-              placeholder="Test bağlantısı için şifre girin"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Password (Kaydetmek için)</label>
+            <label>Şifre</label>
             <input
               type="password"
               value={ldapPassword}
               onChange={(e) => setLdapPassword(e.target.value)}
-              placeholder="Ayarları kaydetmek için şifre girin"
+              placeholder="Boş bırakılırsa mevcut şifre korunur"
             />
-            <small className="form-hint">Şifre şifrelenerek saklanacaktır</small>
+            <small className="form-hint">Şifre şifrelenerek saklanır. Değiştirmek istemiyorsanız boş bırakın.</small>
           </div>
 
           <div className="form-group">
