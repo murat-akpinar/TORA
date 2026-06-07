@@ -101,8 +101,19 @@ public class LdapSettingsService {
             if (request.getPassword() != null && !request.getPassword().isEmpty()) {
                 testContextSource.setPassword(request.getPassword());
             } else {
-                // If no password provided, return error
-                return new LdapTestResponse(false, "LDAP bağlantısı başarısız: Password gereklidir.", "Password is required");
+                // No password provided — fall back to saved DB password
+                Optional<LdapSettings> savedSettings = ldapSettingsRepository.findByIsEnabledTrue();
+                if (savedSettings.isPresent() && savedSettings.get().getPasswordEncrypted() != null) {
+                    try {
+                        String savedPassword = encryptionService.decrypt(savedSettings.get().getPasswordEncrypted());
+                        testContextSource.setPassword(savedPassword);
+                        log.debug("LDAP Test - Using saved DB password (field left empty)");
+                    } catch (Exception e) {
+                        return new LdapTestResponse(false, "Kayıtlı LDAP şifresi okunamadı.", e.getMessage());
+                    }
+                } else {
+                    return new LdapTestResponse(false, "Şifre girilmedi ve kayıtlı şifre bulunamadı. Lütfen şifreyi girin.", "Password required");
+                }
             }
             
             // Initialize the context source after setting all properties
@@ -149,27 +160,28 @@ public class LdapSettingsService {
             }
             
             // Step 2: If userSearchBase is provided, test it (optional)
+            // Build the full DN: if userSearchBase is relative (e.g. "ou=users"), append baseDn
             String warningMessage = null;
             if (userSearchBase != null && !userSearchBase.isEmpty()) {
-                log.debug("LDAP Test - Testing User Search Base: {}", userSearchBase);
+                String fullUserSearchDn = userSearchBase.toLowerCase().contains(baseDn.toLowerCase())
+                    ? userSearchBase
+                    : userSearchBase + "," + baseDn;
+                log.debug("LDAP Test - Testing User Search Base (full DN): {}", fullUserSearchDn);
                 try {
-                    // Try lookup first for userSearchBase
-                    testTemplate.lookup(LdapUtils.newLdapName(userSearchBase));
-                    log.debug("LDAP Test - User Search Base lookup successful: {}", userSearchBase);
+                    testTemplate.lookup(LdapUtils.newLdapName(fullUserSearchDn));
+                    log.debug("LDAP Test - User Search Base lookup successful: {}", fullUserSearchDn);
                 } catch (Exception e) {
-                    // If lookup fails, try search
                     try {
                         EqualsFilter filter = new EqualsFilter("objectClass", "*");
                         testTemplate.search(
-                            LdapUtils.newLdapName(userSearchBase),
+                            LdapUtils.newLdapName(fullUserSearchDn),
                             filter.encode(),
                             (org.springframework.ldap.core.AttributesMapper<Object>) attrs -> null
                         );
-                        log.debug("LDAP Test - User Search Base search successful: {}", userSearchBase);
+                        log.debug("LDAP Test - User Search Base search successful: {}", fullUserSearchDn);
                     } catch (Exception e2) {
-                        // userSearchBase doesn't exist, but base connection is OK
                         log.debug("LDAP Test - User Search Base test failed: {}", e2.getMessage());
-                        warningMessage = "LDAP bağlantısı başarılı, ancak User Search Base '" + userSearchBase + "' bulunamadı. " +
+                        warningMessage = "LDAP bağlantısı başarılı, ancak User Search Base '" + fullUserSearchDn + "' bulunamadı. " +
                             "Lütfen bu DN'in LDAP sunucusunda mevcut olduğundan emin olun. " +
                             "Hata: " + e2.getMessage();
                     }
