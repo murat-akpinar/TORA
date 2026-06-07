@@ -126,7 +126,25 @@ git clone <repository-url>
 cd TORA
 ```
 
-2. Docker Compose ile başlatın:
+2. `.env` dosyasını oluşturun:
+```bash
+cp .example.env .env
+```
+
+Ardından `.env` dosyasını açıp `JWT_SECRET` ve `ENCRYPTION_KEY` değerlerini üretin:
+
+```bash
+# Linux/Mac
+openssl rand -base64 32
+
+# PowerShell
+[Convert]::ToBase64String((1..32 | ForEach-Object { [byte](Get-Random -Max 256) }))
+
+# Python
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+3. Docker Compose ile başlatın:
 ```bash
 docker compose up -d
 ```
@@ -162,6 +180,31 @@ LDAP test sunucusu otomatik olarak ana projenin Docker network'üne bağlanır. 
 4. Uygulamaya erişin:
 - Frontend: http://localhost:81
 - Backend API: http://localhost:8081
+
+### Ortam Değişkenleri (`.env`)
+
+| Değişken | Açıklama | Varsayılan |
+|----------|----------|-----------|
+| `JWT_SECRET` | JWT imzalama anahtarı. Min. 256 bit, Base64. Production'da mutlaka değiştirilmeli. | — (zorunlu) |
+| `JWT_EXPIRATION` | Token geçerlilik süresi (ms). 86400000 = 24 saat. | `86400000` |
+| `ENCRYPTION_KEY` | LDAP şifrelerini şifrelemek için AES-256 anahtarı. Min. 32 karakter, Base64. | — (zorunlu) |
+| `ENCRYPTION_SALT` | PBKDF2 anahtar türetme tuzu. Production'da rastgele değer atanmalı. | `Tora-v2` |
+| `ENFORCE_SECRET_VALIDATION` | `true` yapılırsa default/boş secret ile uygulama başlamaz. Production'da `true` olmalı. | `false` |
+| `SEED_SAMPLE_DATA` | `1` yapılırsa uygulama ilk başlatmada örnek veri ekler. | `0` |
+| `DB_HOST` / `DB_PORT` / `DB_NAME` | PostgreSQL bağlantı bilgileri. | `postgres` / `5432` / `tora` |
+| `DB_USER` / `DB_PASSWORD` | PostgreSQL kullanıcı adı ve şifresi. | `postgres` / `postgres` |
+| `FRONTEND_URL` | CORS izin verilen kaynak. Nginx arkasında tam URL verilmeli. | `http://frontend:8080` |
+
+**Production ortamı için minimum değişiklikler:**
+```bash
+ENFORCE_SECRET_VALIDATION=true
+JWT_SECRET=<openssl rand -base64 32 çıktısı>
+ENCRYPTION_KEY=<openssl rand -base64 32 çıktısı>
+ENCRYPTION_SALT=<openssl rand -base64 16 çıktısı>
+DB_PASSWORD=<güçlü bir şifre>
+```
+
+> `ENFORCE_SECRET_VALIDATION=true` ile backend, varsayılan veya boş secret kullanıldığında başlamayı reddeder — production'da yanlışlıkla test secret'ı bırakılmasını önler.
 
 ### Yatay Ölçeklendirme
 
@@ -222,7 +265,7 @@ Tüm JPA entity'lerde Lombok kullanımı aşağıdaki kurallara uyar:
 
 ### Authentication
 - `POST /api/auth/login` - Login (LDAP veya Local User)
-- `POST /api/auth/register` - Local user oluştur
+- `POST /api/auth/register` - Local user oluştur **(ADMIN rolü gerekli)**
 - `GET /api/auth/me` - Mevcut kullanıcı bilgisi
 
 ### Teams (Birimler)
@@ -378,14 +421,17 @@ docker exec ldap-test bash /init-users.sh
 
 ### Local User Oluşturma
 
+Local kullanıcı oluşturmak için **ADMIN** yetkisi gerekir. Yönetim panelinden (Admin Panel → Kullanıcılar → Yeni Kullanıcı) ya da API üzerinden yapılabilir:
+
 ```bash
 POST /api/auth/register
+Authorization: Bearer <admin-jwt-token>
+
 {
   "username": "testuser",
-  "email": "test@example.com",
   "fullName": "Test User",
   "password": "password123",
-  "role": "YAZILIMCI"  // Optional
+  "role": "YAZILIMCI"
 }
 ```
 
