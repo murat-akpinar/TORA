@@ -1,5 +1,8 @@
 package com.tora.service;
 
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +20,8 @@ import java.util.Base64;
 @Service
 public class EncryptionService {
 
+    private static final Logger logger = LoggerFactory.getLogger(EncryptionService.class);
+    private static final String DEFAULT_ENCRYPTION_KEY = "default-encryption-key-change-in-production-min-32-chars-long";
     private static final String GCM_PREFIX = "GCM:";
     private static final String AES_GCM_ALGO = "AES/GCM/NoPadding";
     private static final String PBKDF2_ALGO = "PBKDF2WithHmacSHA256";
@@ -24,15 +29,33 @@ public class EncryptionService {
     private static final int GCM_TAG_LENGTH = 128;
     private static final int PBKDF2_ITERATIONS = 65536;
     private static final int PBKDF2_KEY_LENGTH = 256;
-    // Fixed salt is acceptable here since the key is secret; individual IVs provide ciphertext uniqueness
-    private static final byte[] KDF_SALT = "Tora-v2".getBytes(StandardCharsets.UTF_8);
+    private static final String DEFAULT_KDF_SALT = "Tora-v2";
 
     @Value("${app.encryption.key:default-encryption-key-change-in-production-min-32-chars-long}")
     private String encryptionKey;
 
+    @Value("${app.encryption.salt:Tora-v2}")
+    private String kdfSalt;
+
+    @Value("${ENFORCE_SECRET_VALIDATION:true}")
+    private boolean enforceSecretValidation;
+
+    @PostConstruct
+    public void validateEncryptionKey() {
+        if (DEFAULT_ENCRYPTION_KEY.equals(encryptionKey)) {
+            String msg = "CRITICAL: ENCRYPTION_KEY is set to the known default value. " +
+                         "Stored LDAP credentials can be decrypted by anyone who knows this key. " +
+                         "Set ENCRYPTION_KEY to a strong random value (min 32 chars). " +
+                         "To skip this check (dev only) set ENFORCE_SECRET_VALIDATION=false";
+            logger.error(msg);
+            if (enforceSecretValidation) throw new IllegalStateException(msg);
+        }
+    }
+
     private SecretKey deriveKey() throws Exception {
         SecretKeyFactory factory = SecretKeyFactory.getInstance(PBKDF2_ALGO);
-        KeySpec spec = new PBEKeySpec(encryptionKey.toCharArray(), KDF_SALT, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH);
+        byte[] salt = kdfSalt.getBytes(StandardCharsets.UTF_8);
+        KeySpec spec = new PBEKeySpec(encryptionKey.toCharArray(), salt, PBKDF2_ITERATIONS, PBKDF2_KEY_LENGTH);
         byte[] keyBytes = factory.generateSecret(spec).getEncoded();
         return new SecretKeySpec(keyBytes, "AES");
     }

@@ -18,39 +18,32 @@ public class JwtConfig {
     private static final String DEFAULT_SECRET = "your-secret-key-change-this-in-production-min-256-bits";
     private static final int MIN_SECRET_LENGTH = 32; // 256 bits = 32 bytes
     
+    @Value("${ENFORCE_SECRET_VALIDATION:true}")
+    private boolean enforceSecretValidation;
+
     @EventListener(ApplicationReadyEvent.class)
     public void validateJwtSecret() {
         if (jwtSecret == null || jwtSecret.trim().isEmpty()) {
-            logger.error("================================================");
-            logger.error("SECURITY WARNING: JWT_SECRET is not set!");
-            logger.error("Please set a strong JWT secret in your environment variables.");
-            logger.error("Minimum length: {} characters (256 bits)", MIN_SECRET_LENGTH);
-            logger.error("================================================");
+            String msg = "CRITICAL: JWT_SECRET environment variable is not set. Set a strong random value (min 32 chars).";
+            logger.error(msg);
+            if (enforceSecretValidation) throw new IllegalStateException(msg);
             return;
         }
-        
+
         if (DEFAULT_SECRET.equals(jwtSecret)) {
-            logger.warn("================================================");
-            logger.warn("SECURITY WARNING: Using default JWT secret!");
-            logger.warn("This is insecure for production environments.");
-            logger.warn("Please change JWT_SECRET to a strong random value.");
-            logger.warn("Minimum length: {} characters (256 bits)", MIN_SECRET_LENGTH);
-            logger.warn("Generate a secure secret: openssl rand -base64 32");
-            logger.warn("================================================");
+            String msg = "CRITICAL: JWT_SECRET is set to the known default value. This allows JWT token forgery. " +
+                         "Set a strong random value: openssl rand -base64 32. " +
+                         "To skip this check (dev only) set ENFORCE_SECRET_VALIDATION=false";
+            logger.error(msg);
+            if (enforceSecretValidation) throw new IllegalStateException(msg);
             return;
         }
-        
+
         if (jwtSecret.length() < MIN_SECRET_LENGTH) {
-            logger.warn("================================================");
-            logger.warn("SECURITY WARNING: JWT secret is too short!");
-            logger.warn("Current length: {} characters", jwtSecret.length());
-            logger.warn("Minimum recommended length: {} characters (256 bits)", MIN_SECRET_LENGTH);
-            logger.warn("Please use a longer secret for better security.");
-            logger.warn("================================================");
-            return;
+            logger.warn("JWT secret is too short ({} chars). Minimum recommended: {} chars.", jwtSecret.length(), MIN_SECRET_LENGTH);
+        } else {
+            logger.info("JWT secret validation passed (length: {} characters)", jwtSecret.length());
         }
-        
-        logger.info("JWT secret validation passed (length: {} characters)", jwtSecret.length());
     }
 }
 

@@ -236,10 +236,11 @@ public class LdapAuthService {
             if (ldapDn != null) {
                 user.setLdapDn(ldapDn);
             }
-            // Reactivate if soft-deleted
+            // Reactivate if soft-deleted — clear roles so admin must re-assign
             if (user.getIsActive() != null && !user.getIsActive()) {
-                logger.info("LDAP Auth - Reactivating soft-deleted user during login: {}", username);
+                logger.warn("LDAP Auth - Reactivating soft-deleted user '{}' via LDAP. All roles cleared; admin must re-assign.", username);
                 user.setIsActive(true);
+                user.getRoles().clear();
             }
             // Ensure password is null for LDAP users
             user.setPassword(null);

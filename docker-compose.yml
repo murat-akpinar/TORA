@@ -41,6 +41,7 @@ services:
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       SEED_SAMPLE_DATA: ${SEED_SAMPLE_DATA}
       FRONTEND_URL: ${FRONTEND_URL:-http://frontend:8080}
+      ENFORCE_SECRET_VALIDATION: ${ENFORCE_SECRET_VALIDATION:-false}
     ports:
       - "8081:8080"
     depends_on:

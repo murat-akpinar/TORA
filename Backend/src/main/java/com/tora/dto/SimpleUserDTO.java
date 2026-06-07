@@ -1,0 +1,19 @@
+package com.tora.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.Set;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class SimpleUserDTO {
+    private Long id;
+    private String username;
+    private String fullName;
+    private Set<String> roles;
+    private Set<Long> teamIds;
+    private Boolean isActive;
+}

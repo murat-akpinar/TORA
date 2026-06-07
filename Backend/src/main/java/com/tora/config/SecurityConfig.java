@@ -68,7 +68,7 @@ public class SecurityConfig {
                     .policyDirectives("default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'"))
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .anyRequest().authenticated()

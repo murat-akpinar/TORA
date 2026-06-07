@@ -32,7 +32,7 @@ const UserModal: React.FC<UserModalProps> = ({ user, onClose }) => {
     if (user) {
       setFormData({
         username: user.username,
-        email: user.email,
+        email: user.email ?? '',
         fullName: user.fullName,
         password: '',
         roleIds: [], // Will be populated from roles
