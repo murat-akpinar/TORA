@@ -101,8 +101,19 @@ public class LdapSettingsService {
             if (request.getPassword() != null && !request.getPassword().isEmpty()) {
                 testContextSource.setPassword(request.getPassword());
             } else {
-                // If no password provided, return error
-                return new LdapTestResponse(false, "LDAP bağlantısı başarısız: Password gereklidir.", "Password is required");
+                // No password provided — fall back to saved DB password
+                Optional<LdapSettings> savedSettings = ldapSettingsRepository.findByIsEnabledTrue();
+                if (savedSettings.isPresent() && savedSettings.get().getPasswordEncrypted() != null) {
+                    try {
+                        String savedPassword = encryptionService.decrypt(savedSettings.get().getPasswordEncrypted());
+                        testContextSource.setPassword(savedPassword);
+                        log.debug("LDAP Test - Using saved DB password (field left empty)");
+                    } catch (Exception e) {
+                        return new LdapTestResponse(false, "Kayıtlı LDAP şifresi okunamadı.", e.getMessage());
+                    }
+                } else {
+                    return new LdapTestResponse(false, "Şifre girilmedi ve kayıtlı şifre bulunamadı. Lütfen şifreyi girin.", "Password required");
+                }
             }
             
             // Initialize the context source after setting all properties
