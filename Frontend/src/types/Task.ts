@@ -19,6 +19,13 @@ export enum Priority {
   URGENT = 'URGENT',  // Acil
 }
 
+export enum SlaStatus {
+  ON_TRACK = 'ON_TRACK',
+  AT_RISK = 'AT_RISK',
+  BREACHED = 'BREACHED',
+  MET = 'MET',
+}
+
 export interface Subtask {
   id: number;
   title: string;
@@ -51,6 +58,8 @@ export interface Task {
   assigneeIds: number[];
   assigneeNames: string[];
   subtasks: Subtask[];
+  slaStatus?: SlaStatus;
+  slaDueAt?: string;
 }
 
 export interface CreateTaskRequest {

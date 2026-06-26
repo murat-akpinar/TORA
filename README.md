@@ -87,6 +87,7 @@ TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
 - **Yetişmedi Hesaplama**: Otomatik yetişmedi iş tespiti
 - **Örnek Veri Ekleme**: `.env` dosyasında `SEED_SAMPLE_DATA=1` yaparak otomatik örnek veri ekleme (çoğu birimde 1 Birim Amiri + 4 personel; **Sistem Birimi** örneğinde yalnızca Melda / Murat / Mustafa üçlüsü, güncel yıl için işler ve projeler)
 - **Arama & Filtreleme**: Global header arama çubuğu (görev/proje/kullanıcı), PostgreSQL GIN full-text search (`tsvector`/`tsquery`), debounce 300 ms, varlık türüne göre gruplama, gelişmiş filtre paneli (durum, öncelik, etiket, atanan), kaydedilmiş filtreler (kullanıcı başına maks. 20)
+- **SLA Takibi**: Öncelik/birim bazlı SLA politikaları (yönetim panelinden CRUD), görev başına SLA durumu (zamanında/riskli/aşıldı/karşılandı) ve görev kartında rozet, ihlal/risk bildirimleri (scheduled job), SLA uyum oranı metriği. Opsiyonel mesai-saati (hafta sonu duraklatma) modu.
 - **Performans**: Caffeine in-memory cache (dashboard + kullanıcı detayları, 5 dk TTL), route-level lazy loading, Vite chunk splitting, DB index optimizasyonu (V23 + V25 + V26), N+1 sorgu giderimi (`@BatchSize` + JOIN FETCH), dashboard SQL aggregation, JWT filter user cache, kanban yerel state güncelleme
 - **Docker Desteği**: Tam containerized yapı, yatay ölçeklendirme için hazır
 

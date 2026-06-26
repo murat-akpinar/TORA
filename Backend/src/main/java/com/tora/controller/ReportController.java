@@ -2,6 +2,7 @@ package com.tora.controller;
 
 import com.tora.dto.*;
 import com.tora.service.ReportService;
+import com.tora.service.SlaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
@@ -17,6 +18,14 @@ public class ReportController {
 
     @Autowired
     private ReportService reportService;
+
+    @Autowired
+    private SlaService slaService;
+
+    @GetMapping("/sla")
+    public ResponseEntity<SlaComplianceDTO> getSlaCompliance(@RequestParam(required = false) Long teamId) {
+        return ResponseEntity.ok(slaService.getCompliance(teamId));
+    }
 
     @GetMapping("/performance")
     public ResponseEntity<List<ReportPerformanceDTO>> getPerformance(

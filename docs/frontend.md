@@ -27,6 +27,7 @@ Frontend/src/
 │   │   ├── TaskLogs           # Task audit log viewer
 │   │   ├── TeamManagement     # Team CRUD
 │   │   ├── TeamModal          # Team create/edit dialog
+│   │   ├── SlaManagement      # SLA policy CRUD + compliance summary
 │   │   ├── UserManagement     # User CRUD
 │   │   └── UserModal          # User create/edit dialog
 │   ├── calendar/         # Calendar & view components
@@ -88,6 +89,7 @@ Frontend/src/
 │   ├── notificationService.ts # Bildirim CRUD (liste, okundu, sil)
 │   ├── searchService.ts       # Global search (/api/search)
 │   ├── reportService.ts       # Reports & Excel export (/api/reports)
+│   ├── slaService.ts          # SLA policy CRUD + compliance (/api/admin/sla-policies, /api/reports/sla)
 │   ├── taskCommentService.ts  # Görev yorumları CRUD
 │   ├── taskLabelService.ts    # Görev etiketleri arama (/api/task-labels)
 │   ├── logService.ts          # System & task log operations
@@ -296,6 +298,9 @@ Defined in `utils/statusColors.ts` (`getStatusColor` / `getStatusLabel`):
 - 12-month grid with seasonal colors
 - Quick stats per month (task counts by status)
 - Click a month to navigate to detailed view
+
+### SLA Badge
+Task cards show a colored SLA chip when the task has an SLA: `SLA: zamanında` (ON_TRACK, green), `SLA: riskli` (AT_RISK, peach), `SLA: aşıldı` (BREACHED, red), `SLA ✓` (MET, teal). Admin panel → **SLA** tab manages policies and shows the compliance summary.
 
 ### Task List View (`TaskListView`)
 - Table-based list with columns: title, project, assignee, label, priority, status, dates

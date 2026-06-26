@@ -226,11 +226,23 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 - [x] Kaydedilmiş filtreler / hızlı filtre favorileri
 
 ### Raporlama & Analitik
-- [ ] Haftalık/aylık birim performans raporu (PDF export)
-- [ ] Birim karşılaştırma grafikleri (tamamlanan/geciken/toplam)
-- [ ] Kişisel verimlilik metrikleri (ortalama tamamlama süresi)
-- [ ] Excel export (görev listesi filtrelenmiş)
-- [ ] Süreç süresi analizi (görev açılış → kapanış istatistikleri)
+> Not: Backend büyük ölçüde **yapıldı** — `ReportController`/`ReportService` (`/api/reports/*`): performans, birim karşılaştırma, kişisel verimlilik, süreç süresi + Excel export. Kalan tek eksik **PDF export**.
+- [x] Birim karşılaştırma grafikleri (tamamlanan/geciken/toplam) — `/api/reports/unit-comparison`
+- [x] Kişisel verimlilik metrikleri (ortalama tamamlama süresi) — `/api/reports/productivity`
+- [x] Süreç süresi analizi (görev açılış → kapanış istatistikleri) — `/api/reports/process-duration`
+- [x] Excel export (görev listesi filtrelenmiş) — `/api/reports/export/excel`
+- [ ] Haftalık/aylık birim performans raporu **PDF export** (Excel mevcut, PDF eksik)
+
+### SLA Takibi ✅ (2026-06-27)
+- [x] `sla_policies` tablosu (V30) — öncelik (URGENT/HIGH/NORMAL) ve/veya birim bazlı **hedef çözüm süresi**; en spesifik aktif politika kazanır. Varsayılanlar seed'lendi (URGENT 4s / HIGH 24s / NORMAL 72s)
+- [x] Görev için SLA hedef zamanı hesaplama (`SlaService`, oluşturma + politika); **mesai-saati / iş günü** modu (hafta sonu duraklatma)
+- [x] Görevde SLA durumu: **ON_TRACK / AT_RISK** (eşiğin ~%80'i) **/ BREACHED / MET** — `tasks.sla_status` + görev kartında rozet
+- [x] İhlal/risk tespiti — `@Scheduled` job (30 dk); `SLA_AT_RISK` + `SLA_BREACHED` bildirimleri (atanan + birim amiri)
+- [x] Admin panelinde **SLA politikası yönetimi** (CRUD) — `/api/admin/sla-policies`, Yönetim Paneli → SLA sekmesi
+- [x] Rapor metriği: **SLA uyum oranı** (`/api/reports/sla`) + durum sayıları; SLA sekmesinde özet kartlar
+- [ ] (Opsiyonel) Excel/PDF SLA raporu (uyum metriği var, ayrı dosya export'u eksik)
+- [ ] (Opsiyonel) Eskalasyon kuralı: ihlalde önceliği yükselt / üst amire bildir
+- [ ] (Opsiyonel) Etiket bazlı politika + ilk-yanıt (response) SLA'sı + resmi tatil takvimi
 
 ### Takvim Geliştirmeleri
 - [ ] Sürükle-bırak görev taşıma (takvim görünümünde)
@@ -266,7 +278,7 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 - [ ] Slack / Microsoft Teams entegrasyonu (bildirim köprüsü)
 - [ ] E-posta ile görev oluşturma (IMAP listener)
 - [ ] Otomatik görev atama kuralları (round-robin, birim bazlı)
-- [ ] SLA takibi (yapılandırılabilir eşikler, ihlal bildirimi)
+- [ ] SLA takibi → ayrı **"SLA Takibi"** başlığına taşındı (Orta Vadeli)
 
 ### Gelişmiş Güvenlik
 - [ ] IP allowlist (admin panel sadece belirli IP'lerden)

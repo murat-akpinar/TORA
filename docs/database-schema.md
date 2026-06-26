@@ -105,6 +105,8 @@ Core task/work item records.
 | `created_at` | TIMESTAMP | NO | now() | Creation timestamp |
 | `updated_at` | TIMESTAMP | NO | now() | Last update timestamp |
 
+**SLA columns (V30)**: `sla_due_at` (TIMESTAMP, nullable — computed resolution deadline), `sla_status` (VARCHAR(20): `ON_TRACK`/`AT_RISK`/`BREACHED`/`MET`, indexed), `completed_at` (TIMESTAMP, set when status → COMPLETED).
+
 **Status values** (`TaskStatus` enum): `OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `CANCELLED`
 
 > The `POSTPONED` and `OVERDUE` statuses were retired in migration **V18** (existing rows migrated to `IN_PROGRESS`). The `postponed_*` / `is_postponed` columns remain for historical data but are no longer set by new status transitions.
@@ -420,6 +422,25 @@ Kalıcı refresh token'ları (V28). Sadece SHA-256 hash saklanır, rotate-on-use
 
 ---
 
+## `sla_policies`
+
+SLA çözüm-süresi politikaları (V30). Bir görev, opsiyonel **öncelik** ve/veya **birim** ile eşleşen en spesifik aktif politikaya bağlanır.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `name` | VARCHAR(100) | NO | — | Politika adı |
+| `priority` | VARCHAR(20) | YES | NULL | Eşleşeceği öncelik (NULL = tümü) |
+| `team_id` | BIGINT | YES | NULL | FK → `teams.id` (NULL = tüm birimler) |
+| `target_hours` | INT | NO | — | Hedef çözüm süresi (saat) |
+| `business_hours_only` | BOOLEAN | NO | false | `true` ise hafta sonları sayılmaz |
+| `is_active` | BOOLEAN | NO | true | Politika aktif mi |
+| `created_at` / `updated_at` | TIMESTAMP | NO | now() | Zaman damgaları |
+
+**Indexes**: `is_active`. Seed (V30): URGENT→4s, HIGH→24s, NORMAL→72s (global, 7/24).
+
+---
+
 ## Entity Relationship Diagram
 
 ```
@@ -493,6 +514,7 @@ All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
 | `V27__saved_filters.xml` | Create `saved_filters` table + `idx_saved_filters_user_id` |
 | `V28__create_token_stores.xml` | Create `revoked_tokens` and `refresh_tokens` tables (persistent JWT blacklist + refresh store, SHA-256 hashed) with expiry indexes |
 | `V29__add_session_info_to_refresh_tokens.xml` | Add `ip_address` + `user_agent` to `refresh_tokens` for the session-management UI |
+| `V30__create_sla.xml` | Create `sla_policies` (+ seed defaults), add `sla_due_at`/`sla_status`/`completed_at` to `tasks` with `idx_tasks_sla_status` |
 
 ### Adding New Migrations
 

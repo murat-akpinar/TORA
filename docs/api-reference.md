@@ -558,6 +558,7 @@ Aggregated reporting endpoints. All accept optional `teamId`, `startDate`, `endD
 | `GET /api/reports/process-duration` | Task open→close duration statistics |
 | `GET /api/reports/task-list` | Filtered task list data |
 | `GET /api/reports/export/excel?type=<type>` | Download `.xlsx` export (`type` = `performance`/etc.) |
+| `GET /api/reports/sla?teamId=<id>` | SLA compliance: counts by status + `complianceRate` (met / (met+breached)) |
 
 ---
 
@@ -758,6 +759,39 @@ Search for users in LDAP directory.
 
 ### POST `/api/admin/ldap/import`
 Import an LDAP user into the local database.
+
+---
+
+## Admin - SLA Policies (`/api/admin/sla-policies`) 🔒 ADMIN only
+
+CRUD for SLA resolution-time policies. A policy scopes by optional `priority` and/or `teamId` (null = any); the most specific active policy wins for a task.
+
+### GET `/api/admin/sla-policies`
+List all policies (`SlaPolicyDTO[]`).
+
+### POST `/api/admin/sla-policies`
+Create a policy.
+
+**Request Body:**
+```json
+{
+  "name": "Acil işler",
+  "priority": "URGENT",
+  "teamId": null,
+  "targetHours": 4,
+  "businessHoursOnly": false,
+  "isActive": true
+}
+```
+**Response: 201 Created.**
+
+### PUT `/api/admin/sla-policies/{id}`
+Update a policy (same body).
+
+### DELETE `/api/admin/sla-policies/{id}`
+Delete a policy. **204 No Content.**
+
+> A scheduled job (every 30 min) re-evaluates open tasks against active policies, updates `sla_status`, and emits `SLA_AT_RISK` / `SLA_BREACHED` notifications (assignees + team leader) on transition.
 
 ---
 

@@ -103,9 +103,20 @@ public class Task {
     @Column(name = "is_postponed", nullable = false)
     private Boolean isPostponed = false;
     
+    // SLA tracking (V30)
+    @Column(name = "sla_due_at")
+    private LocalDateTime slaDueAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sla_status", length = 20)
+    private com.tora.model.enums.SlaStatus slaStatus;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     

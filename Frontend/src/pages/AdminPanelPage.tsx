@@ -8,13 +8,14 @@ import RoleManagement from '../components/admin/RoleManagement';
 import LdapImport from '../components/admin/LdapImport';
 import SystemLogs from '../components/admin/SystemLogs';
 import TaskLogs from '../components/admin/TaskLogs';
+import SlaManagement from '../components/admin/SlaManagement';
 import { notify } from '../utils/notify';
 import './AdminPanelPage.css';
 
 const AdminPanelPage: React.FC = () => {
   const { user, hasRole, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'users' | 'teams' | 'roles' | 'ldap' | 'logs'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'teams' | 'roles' | 'ldap' | 'sla' | 'logs'>('users');
   const [activeLogTab, setActiveLogTab] = useState<'system' | 'tasks'>('system');
 
   useEffect(() => {
@@ -86,6 +87,12 @@ const AdminPanelPage: React.FC = () => {
           LDAP Import
         </button>
         <button
+          className={activeTab === 'sla' ? 'active' : ''}
+          onClick={() => setActiveTab('sla')}
+        >
+          SLA
+        </button>
+        <button
           className={activeTab === 'logs' ? 'active' : ''}
           onClick={() => setActiveTab('logs')}
         >
@@ -98,6 +105,7 @@ const AdminPanelPage: React.FC = () => {
         {activeTab === 'teams' && <TeamManagement />}
         {activeTab === 'roles' && <RoleManagement />}
         {activeTab === 'ldap' && <LdapImport />}
+        {activeTab === 'sla' && <SlaManagement />}
         {activeTab === 'logs' && (
           <div className="logs-tab-content">
             <div className="logs-sub-tabs">

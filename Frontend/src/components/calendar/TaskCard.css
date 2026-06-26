@@ -159,3 +159,31 @@
   white-space: nowrap;
   min-width: 0;
 }
+
+/* SLA durum rozeti */
+.sla-chip {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.sla-chip.sla-ontrack {
+  background: rgba(166, 227, 161, 0.18);
+  color: var(--ctp-green);
+}
+.sla-chip.sla-atrisk {
+  background: rgba(250, 179, 135, 0.2);
+  color: var(--ctp-peach);
+}
+.sla-chip.sla-breached {
+  background: rgba(243, 139, 168, 0.2);
+  color: var(--ctp-red);
+}
+.sla-chip.sla-met {
+  background: rgba(148, 226, 213, 0.18);
+  color: var(--ctp-teal);
+}
+

@@ -66,7 +66,8 @@ TORA/
 │   │   │   ├── CalendarController.java  # Calendar data by year/month
 │   │   │   ├── SearchController.java    # Global search (tasks, projects, users)
 │   │   │   ├── SavedFilterController.java # Saved search/filter definitions per user
-│   │   │   ├── ReportController.java    # Performance/productivity reports + Excel export
+│   │   │   ├── ReportController.java    # Performance/productivity reports + Excel export + SLA compliance
+│   │   │   ├── SlaPolicyController.java  # SLA policy CRUD (admin)
 │   │   │   ├── NotificationController.java # In-app notifications (list, mark read, delete)
 │   │   │   ├── UserProfileController.java  # User profile, password, login history
 │   │   │   ├── LdapSettingsController.java # LDAP configuration
@@ -99,6 +100,7 @@ TORA/
 │   │   │   ├── TaskComment.java         # Görev yorumları
 │   │   │   ├── TaskLabel.java           # Görev etiketleri (task_type'ın yerini aldı)
 │   │   │   ├── Notification.java        # Kullanıcı bildirimleri
+│   │   │   ├── SlaPolicy.java           # SLA çözüm-süresi politikası
 │   │   │   ├── SavedFilter.java         # Kullanıcı başına kaydedilmiş arama/filtre
 │   │   │   ├── RevokedToken.java        # Blacklist'lenen JWT (SHA-256 hash, DB)
 │   │   │   ├── RefreshToken.java        # Kalıcı refresh token (SHA-256 hash, DB)
@@ -108,7 +110,8 @@ TORA/
 │   │   │   └── enums/
 │   │   │       ├── TaskStatus.java      # OPEN, IN_PROGRESS, TESTING, COMPLETED, CANCELLED
 │   │   │       ├── TaskType.java        # TASK, FEATURE, BUG, IMPROVEMENT, RESEARCH, DOCUMENTATION, TEST, MAINTENANCE, MEETING
-│   │   │       ├── NotificationType.java # TASK_ASSIGNED, TASK_STATUS_CHANGED, TASK_DUE_SOON, COMMENT_MENTION, COMMENT_ON_TASK
+│   │   │       ├── SlaStatus.java        # ON_TRACK, AT_RISK, BREACHED, MET
+│   │   │       ├── NotificationType.java # TASK_ASSIGNED, TASK_STATUS_CHANGED, TASK_DUE_SOON, COMMENT_MENTION, COMMENT_ON_TASK, SLA_AT_RISK, SLA_BREACHED
 │   │   │       ├── Priority.java        # NORMAL, HIGH, URGENT
 │   │   │       ├── ProjectStatus.java   # ACTIVE, COMPLETED, ON_HOLD, CANCELLED
 │   │   │       └── Role.java            # ADMIN, BIRIM_AMIRI, YAZILIMCI, DEVOPS, IS_ANALISTI, TESTCI
@@ -125,7 +128,7 @@ TORA/
 │   │   ├── application.yml              # Main configuration
 │   │   └── db/changelog/
 │   │       ├── db.changelog-master.xml  # Liquibase master changelog
-│   │       └── changes/                 # Individual migration files (V1–V29)
+│   │       └── changes/                 # Individual migration files (V1–V30)
 │   ├── Dockerfile
 │   └── pom.xml
 ├── Frontend/
@@ -238,6 +241,7 @@ Notification ──M:1── TaskComment (optional)
 | `SavedFilterService` | Per-user saved search/filter CRUD (max 20 per user, ownership-checked) |
 | `TaskLabelService` | Team-scoped task label search/lookup |
 | `ReportService` | Performance / productivity / unit-comparison / process-duration aggregation + Apache POI Excel export |
+| `SlaService` | SLA policy matching, due-time calc (optional business-hours), per-task recalc, scheduled breach evaluation + notifications, compliance metric, policy CRUD |
 | `DashboardService` | Team statistics, leaderboard data — Caffeine cached (5 min TTL), team-targeted eviction on task mutations |
 | `NotificationService` | In-app notification create/query/mark-read/delete; dedup within 60s window |
 | `TaskDueSoonNotifier` | Scheduled job (every day 08:00) — produces `TASK_DUE_SOON` notifications |

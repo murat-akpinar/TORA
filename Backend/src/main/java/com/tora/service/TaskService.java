@@ -61,6 +61,9 @@ public class TaskService {
     private TaskLabelService taskLabelService;
 
     @Autowired
+    private SlaService slaService;
+
+    @Autowired
     private CacheManager cacheManager;
 
     /**
@@ -239,6 +242,9 @@ public class TaskService {
             }
         }
         
+        // SLA: compute due/status now that createdAt is populated
+        slaService.recalculate(task);
+
         // Log task creation
         taskLogService.logTaskAction(task, "CREATED", currentUser, "Task created", null, convertToDTO(task));
 
@@ -342,7 +348,10 @@ public class TaskService {
         }
         
         task = taskRepository.save(task);
-        
+
+        // SLA: recompute on update (priority/team/status may have changed)
+        slaService.recalculate(task);
+
         // Log task update
         TaskDTO newTaskDTO = convertToDTO(task);
         taskLogService.logTaskAction(task, "UPDATED", currentUser, "Task updated", oldTaskDTO, newTaskDTO);
@@ -409,6 +418,9 @@ public class TaskService {
         task.setStatus(request.getStatus());
         task = taskRepository.save(task);
         statusHistoryRepository.save(history);
+
+        // SLA: recompute (sets completedAt + MET/BREACHED on completion)
+        slaService.recalculate(task);
         
         // Log status change in task logs
         taskLogService.logTaskAction(
@@ -496,6 +508,8 @@ public class TaskService {
         dto.setSubtasks(task.getSubtasks().stream()
             .map(this::convertSubtaskToDTO)
             .collect(Collectors.toList()));
+        dto.setSlaStatus(task.getSlaStatus());
+        dto.setSlaDueAt(task.getSlaDueAt());
         return dto;
     }
     
