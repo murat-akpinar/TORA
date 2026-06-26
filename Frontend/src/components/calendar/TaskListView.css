@@ -309,3 +309,75 @@
   font-size: 12px;
   color: var(--ctp-subtext0);
 }
+
+/* ───────────────── Bulk selection ───────────────── */
+.col-select {
+  width: 36px;
+  text-align: center;
+}
+.col-select input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.task-list-row.is-selected {
+  background: rgba(137, 180, 250, 0.12);
+}
+
+.task-bulk-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-bottom: 10px;
+  background: var(--ctp-surface0);
+  border: 1px solid var(--ctp-blue);
+  border-radius: 10px;
+}
+
+.task-bulk-count {
+  font-weight: 700;
+  color: var(--ctp-blue);
+}
+
+.task-bulk-select {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--ctp-surface1);
+  background: var(--ctp-base);
+  color: var(--ctp-text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.task-bulk-delete,
+.task-bulk-clear {
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--ctp-surface1);
+  background: transparent;
+  color: var(--ctp-text);
+  transition: all 0.15s ease;
+}
+.task-bulk-delete {
+  border-color: var(--ctp-red);
+  color: var(--ctp-red);
+}
+.task-bulk-delete:hover:not(:disabled) {
+  background: var(--ctp-red);
+  color: var(--ctp-base);
+}
+.task-bulk-clear {
+  margin-left: auto;
+}
+.task-bulk-delete:disabled,
+.task-bulk-clear:disabled,
+.task-bulk-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

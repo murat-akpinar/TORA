@@ -442,6 +442,70 @@ public class TaskService {
         return convertToDTO(task);
     }
     
+    // ───────────────── BULK OPERATIONS ─────────────────
+
+    public BulkResultDTO bulkOperation(BulkTaskRequest request) {
+        if (request.getTaskIds() == null || request.getTaskIds().isEmpty()) {
+            throw new RuntimeException("Görev seçilmedi");
+        }
+        int succeeded = 0;
+        int failed = 0;
+        List<String> errors = new ArrayList<>();
+
+        for (Long id : request.getTaskIds()) {
+            try {
+                switch (request.getAction() == null ? "" : request.getAction()) {
+                    case "STATUS" -> {
+                        if (request.getStatus() == null) throw new RuntimeException("Durum gerekli");
+                        UpdateTaskStatusRequest sr = new UpdateTaskStatusRequest();
+                        sr.setStatus(request.getStatus());
+                        sr.setChangeReason(request.getChangeReason());
+                        updateTaskStatus(id, sr);
+                    }
+                    case "ASSIGN" -> bulkAssign(id, request.getAssigneeId());
+                    case "DELETE" -> deleteTask(id);
+                    default -> throw new RuntimeException("Geçersiz işlem: " + request.getAction());
+                }
+                succeeded++;
+            } catch (Exception e) {
+                failed++;
+                errors.add("#" + id + ": " + e.getMessage());
+            }
+        }
+        return new BulkResultDTO(succeeded, failed, errors);
+    }
+
+    private void bulkAssign(Long id, Long assigneeId) {
+        if (assigneeId == null) throw new RuntimeException("Atanacak kullanıcı gerekli");
+        Task task = taskRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        List<Long> accessibleTeamIds = teamService.getAccessibleTeamIds();
+        if (!accessibleTeamIds.contains(task.getTeam().getId()) && !hasProjectAccess(task, accessibleTeamIds)) {
+            throw new RuntimeException("Access denied");
+        }
+        User currentUser = getCurrentUser();
+        checkCanModifyTask(task, currentUser);
+
+        User assignee = userRepository.findById(assigneeId)
+            .orElseThrow(() -> new RuntimeException("User not found: " + assigneeId));
+        boolean isNew = task.getAssignees().stream().noneMatch(u -> u.getId().equals(assigneeId));
+
+        TaskDTO oldDto = convertToDTO(task);
+        Set<User> assignees = new HashSet<>(task.getAssignees());
+        assignees.add(assignee);
+        task.setAssignees(assignees);
+        task = taskRepository.save(task);
+
+        taskLogService.logTaskAction(task, "ASSIGNEE_ADDED", currentUser, "Toplu atama", oldDto, convertToDTO(task));
+        if (isNew) {
+            notificationService.notifyTaskAssigned(task, Set.of(assignee), currentUser);
+        }
+        evictDashboardCache(task.getTeam().getId());
+    }
+
+    // ───────────────── /BULK OPERATIONS ─────────────────
+
     public List<TaskDTO> getTasksByDateRange(LocalDate startDate, LocalDate endDate, Long teamId) {
         List<Long> accessibleTeamIds = teamService.getAccessibleTeamIds();
         

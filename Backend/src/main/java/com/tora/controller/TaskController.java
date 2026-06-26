@@ -55,6 +55,11 @@ public class TaskController {
         return ResponseEntity.ok(taskService.updateTaskStatus(id, request));
     }
     
+    @PostMapping("/bulk")
+    public ResponseEntity<BulkResultDTO> bulkOperation(@RequestBody BulkTaskRequest request) {
+        return ResponseEntity.ok(taskService.bulkOperation(request));
+    }
+
     @GetMapping("/date-range")
     public ResponseEntity<List<TaskDTO>> getTasksByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,

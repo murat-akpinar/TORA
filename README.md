@@ -72,7 +72,7 @@ TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
   - Takvim Görünümü: Günlük takvim görünümü, hafta sonu günleri soluk, responsive tasarım
   - Gantt Chart: Timeline bazlı Gantt chart, hafta seçimi, hiyerarşik subtask desteği, responsive tasarım
   - Kanban Board: Status bazlı Kanban board, her takım için ayrı, responsive tasarım
-  - Liste Görünümü: Tablo tabanlı, 20 kayıt/sayfa pagination, subtask expand/collapse
+  - Liste Görünümü: Tablo tabanlı, 20 kayıt/sayfa pagination, subtask expand/collapse, **toplu işlemler** (çoklu seçim → toplu durum/atama/silme)
 - **Aylık Görünüm**: 12 ay grid görünümü, mevsim renkleri ile, responsive grid düzeni
 - **Sidebar Toggle**: Sol menüyü gizleme/gösterme özelliği (localStorage ile state yönetimi)
 - **Proje Yönetimi**: Proje oluşturma, düzenleme, silme. Projelere ekip atama ve iş ekleme

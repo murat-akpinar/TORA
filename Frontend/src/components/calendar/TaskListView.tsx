@@ -11,6 +11,11 @@ import {
 } from 'date-fns';
 import { tr } from 'date-fns/locale';
 import { getStatusColor, getStatusLabel } from '../../utils/statusColors';
+import { taskService } from '../../services/taskService';
+import { userService } from '../../services/userService';
+import { useAuth } from '../../hooks/useAuth';
+import { notify } from '../../utils/notify';
+import { extractErrorMessage } from '../../utils/errorMessages';
 import './TaskListView.css';
 
 export interface TaskListViewProps {
@@ -20,7 +25,12 @@ export interface TaskListViewProps {
   selectedWeek?: number;
   weeksInMonth?: number;
   onTaskClick?: (task: Task) => void;
+  onBulkComplete?: () => void;
 }
+
+const BULK_STATUSES: TaskStatus[] = [
+  TaskStatus.OPEN, TaskStatus.IN_PROGRESS, TaskStatus.TESTING, TaskStatus.COMPLETED, TaskStatus.CANCELLED,
+];
 
 const AVATAR_BG = ['#cba6f7', '#89b4fa', '#a6e3a1', '#f9e2af', '#eba0ac', '#f5c2e7', '#94e2d5'];
 
@@ -37,13 +47,69 @@ const TaskListView: React.FC<TaskListViewProps> = ({
   selectedWeek,
   weeksInMonth,
   onTaskClick,
+  onBulkComplete,
 }) => {
+  const { hasRole } = useAuth();
   const [expandedTasks, setExpandedTasks] = useState<Set<number>>(new Set());
   const [page, setPage] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [users, setUsers] = useState<{ id: number; fullName: string }[]>([]);
+  const [bulkBusy, setBulkBusy] = useState(false);
+
+  const canDelete = hasRole('ADMIN') || hasRole('BIRIM_AMIRI');
 
   useEffect(() => {
     setPage(0);
+    setSelectedIds(new Set());
   }, [tasks, month, year, selectedWeek]);
+
+  useEffect(() => {
+    userService.getAllUsers()
+      .then((us) => setUsers(us.map((u) => ({ id: u.id, fullName: u.fullName }))))
+      .catch(() => { /* atama listesi yüklenemedi */ });
+  }, []);
+
+  const toggleSelect = (taskId: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(taskId)) next.delete(taskId);
+      else next.add(taskId);
+      return next;
+    });
+  };
+
+  const runBulk = async (req: Parameters<typeof taskService.bulkOperation>[0]) => {
+    setBulkBusy(true);
+    try {
+      const res = await taskService.bulkOperation(req);
+      if (res.failed > 0) {
+        notify.warning(`${res.succeeded} işlem başarılı, ${res.failed} başarısız.`);
+      } else {
+        notify.success(`${res.succeeded} görev güncellendi.`);
+      }
+      setSelectedIds(new Set());
+      onBulkComplete?.();
+    } catch (error) {
+      notify.error(extractErrorMessage(error, 'Toplu işlem başarısız.'));
+    } finally {
+      setBulkBusy(false);
+    }
+  };
+
+  const handleBulkStatus = (status: string) => {
+    if (!status) return;
+    void runBulk({ action: 'STATUS', taskIds: Array.from(selectedIds), status: status as TaskStatus });
+  };
+
+  const handleBulkAssign = (assigneeId: string) => {
+    if (!assigneeId) return;
+    void runBulk({ action: 'ASSIGN', taskIds: Array.from(selectedIds), assigneeId: Number(assigneeId) });
+  };
+
+  const handleBulkDelete = () => {
+    if (!window.confirm(`${selectedIds.size} görev silinecek. Emin misiniz?`)) return;
+    void runBulk({ action: 'DELETE', taskIds: Array.from(selectedIds) });
+  };
 
   const monthStart = startOfMonth(new Date(year, month - 1, 1));
   const monthEnd = endOfMonth(monthStart);
@@ -164,12 +230,66 @@ const TaskListView: React.FC<TaskListViewProps> = ({
   const totalPages = Math.ceil(organizedTasks.length / PAGE_SIZE);
   const pagedTasks = organizedTasks.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
 
+  const pageParentIds = pagedTasks.filter((r) => !r.isSubtask).map((r) => r.task.id);
+  const allPageSelected = pageParentIds.length > 0 && pageParentIds.every((id) => selectedIds.has(id));
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allPageSelected) pageParentIds.forEach((id) => next.delete(id));
+      else pageParentIds.forEach((id) => next.add(id));
+      return next;
+    });
+  };
+
   return (
     <div className="task-list-view">
+      {selectedIds.size > 0 && (
+        <div className="task-bulk-bar">
+          <span className="task-bulk-count">{selectedIds.size} seçili</span>
+          <select
+            className="task-bulk-select"
+            value=""
+            disabled={bulkBusy}
+            onChange={(e) => handleBulkStatus(e.target.value)}
+          >
+            <option value="">Durum değiştir…</option>
+            {BULK_STATUSES.map((s) => (
+              <option key={s} value={s}>{getStatusLabel(s)}</option>
+            ))}
+          </select>
+          <select
+            className="task-bulk-select"
+            value=""
+            disabled={bulkBusy}
+            onChange={(e) => handleBulkAssign(e.target.value)}
+          >
+            <option value="">Ata (ekle)…</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>{u.fullName}</option>
+            ))}
+          </select>
+          {canDelete && (
+            <button className="task-bulk-delete" disabled={bulkBusy} onClick={handleBulkDelete}>
+              Sil
+            </button>
+          )}
+          <button className="task-bulk-clear" disabled={bulkBusy} onClick={() => setSelectedIds(new Set())}>
+            Seçimi temizle
+          </button>
+        </div>
+      )}
       <div className="task-list-scroll">
         <table className="task-list-table">
           <thead>
             <tr>
+              <th className="col-select">
+                <input
+                  type="checkbox"
+                  checked={allPageSelected}
+                  onChange={toggleSelectAll}
+                  aria-label="Tümünü seç"
+                />
+              </th>
               <th className="col-title">Başlık</th>
               <th className="col-project">Proje</th>
               <th className="col-assignees">Atanan</th>
@@ -183,7 +303,7 @@ const TaskListView: React.FC<TaskListViewProps> = ({
           <tbody>
             {organizedTasks.length === 0 ? (
               <tr>
-                <td colSpan={8} className="task-list-empty">
+                <td colSpan={9} className="task-list-empty">
                   Bu dönemde gösterilecek iş yok.
                 </td>
               </tr>
@@ -195,9 +315,19 @@ const TaskListView: React.FC<TaskListViewProps> = ({
                 return (
                   <tr
                     key={rowKey}
-                    className={`task-list-row ${isSubtask ? 'is-subtask' : ''}`}
+                    className={`task-list-row ${isSubtask ? 'is-subtask' : ''} ${!isSubtask && selectedIds.has(task.id) ? 'is-selected' : ''}`}
                     onClick={() => onTaskClick?.(task)}
                   >
+                    <td className="col-select" onClick={(e) => e.stopPropagation()}>
+                      {!isSubtask && (
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(task.id)}
+                          onChange={() => toggleSelect(task.id)}
+                          aria-label="Görevi seç"
+                        />
+                      )}
+                    </td>
                     <td className="col-title">
                       <div
                         className="task-list-title-cell"

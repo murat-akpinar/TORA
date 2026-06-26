@@ -223,6 +223,28 @@ Update only the status of a task.
 
 ---
 
+### POST `/api/tasks/bulk`
+Apply one action to many tasks. Each task is processed with the same per-task permission, logging, notification and SLA logic as the single-task endpoints; failures are collected (partial success).
+
+**Request Body:**
+```json
+{
+  "action": "STATUS",          // STATUS | ASSIGN | DELETE
+  "taskIds": [786, 969, 1553],
+  "status": "COMPLETED",        // STATUS
+  "changeReason": "toplu test", // STATUS (optional)
+  "assigneeId": 1               // ASSIGN (adds the user to assignees)
+}
+```
+
+**Response (200):**
+```json
+{ "succeeded": 3, "failed": 0, "errors": [] }
+```
+`errors` lists `#<taskId>: <reason>` for any task that was skipped (e.g. permission denied). `DELETE` honours the per-task rule (only ADMIN / BIRIM_AMIRI / creator).
+
+---
+
 ### GET `/api/tasks/date-range`
 Get tasks within a date range.
 

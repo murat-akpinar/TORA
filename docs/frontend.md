@@ -307,6 +307,7 @@ Task cards show a colored SLA chip when the task has an SLA: `SLA: zamanında` (
 - Client-side pagination: 20 rows/page, page controls + "X–Y / total" counter
 - Page resets automatically on month/week/task filter change
 - Subtask expand/collapse support
+- **Bulk operations**: row checkboxes + select-all; a bulk bar applies status change / assign (add) / delete to the selected tasks via `POST /api/tasks/bulk` (delete shown only to ADMIN/BIRIM_AMIRI), then refreshes the list
 
 ### Notification System
 - `NotificationBell` in header: okunmamış sayısı badge, 30s polling

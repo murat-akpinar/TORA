@@ -32,6 +32,7 @@ const CalendarPage: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [filter, setFilter] = useState<FilterState>(emptyFilter());
@@ -52,7 +53,7 @@ const CalendarPage: React.FC = () => {
     };
 
     fetchTasks();
-  }, [selectedYear, selectedTeamId, selectedProjectId]);
+  }, [selectedYear, selectedTeamId, selectedProjectId, refreshKey]);
 
   useEffect(() => {
     const fetchProjects = async () => {
@@ -318,6 +319,7 @@ const CalendarPage: React.FC = () => {
                       selectedWeek={selectedWeek}
                       weeksInMonth={weeksInMonth}
                       onTaskClick={handleTaskClick}
+                      onBulkComplete={() => setRefreshKey((k) => k + 1)}
                     />
                   ) : (
                     <KanbanBoardView
