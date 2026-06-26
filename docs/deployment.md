@@ -226,11 +226,17 @@ To populate the database with test data:
 This creates:
 - 5 users per team (1 department head + 4 staff)
 - Department heads automatically assigned as team leaders
-- 15-35 tasks per month for the current year
+- Tasks across the previous and current year (varied status/priority)
 - 5 sample projects
 - Subtasks on ~30% of tasks
+- **SLA state on every seeded task** — `sla_due_at`/`sla_status` computed against the
+  default policies; completed tasks get a realistic `completed_at`, producing a mix
+  of `ON_TRACK` / `AT_RISK` / `BREACHED` / `MET` for a populated SLA demo
 
-> Sample data is only seeded once. Existing data prevents re-seeding.
+> Sample data is only seeded **once** — if the `tasks` table already has rows, the
+> seeder skips (idempotent), so leaving `SEED_SAMPLE_DATA=1` on does not duplicate data.
+> To regenerate, wipe the database volume first (`./build.sh --full` or recreate the
+> `postgres_data` volume).
 
 ---
 

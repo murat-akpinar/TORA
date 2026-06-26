@@ -57,35 +57,31 @@ public class SlaService {
      * Safe to call on every create/update/status change.
      */
     public void recalculate(Task task) {
-        TaskStatus status = task.getStatus();
-
-        if (status == TaskStatus.COMPLETED) {
-            if (task.getCompletedAt() == null) task.setCompletedAt(LocalDateTime.now());
-            if (task.getSlaDueAt() != null) {
-                task.setSlaStatus(task.getCompletedAt().isAfter(task.getSlaDueAt())
-                        ? SlaStatus.BREACHED : SlaStatus.MET);
-            } else {
-                task.setSlaStatus(null);
-            }
-            return;
-        }
-        if (status == TaskStatus.CANCELLED) {
-            task.setSlaStatus(null); // SLA not meaningful for cancelled work
-            return;
-        }
-
-        // Open statuses
-        task.setCompletedAt(null);
         SlaPolicy policy = findMatchingPolicy(task);
         if (policy == null) {
             task.setSlaDueAt(null);
             task.setSlaStatus(null);
             return;
         }
+
+        TaskStatus status = task.getStatus();
+        if (status == TaskStatus.CANCELLED) {
+            task.setSlaDueAt(null);
+            task.setSlaStatus(null); // SLA not meaningful for cancelled work
+            return;
+        }
+
         LocalDateTime start = task.getCreatedAt() != null ? task.getCreatedAt() : LocalDateTime.now();
         LocalDateTime due = computeDueAt(start, policy.getTargetHours(), Boolean.TRUE.equals(policy.getBusinessHoursOnly()));
         task.setSlaDueAt(due);
-        task.setSlaStatus(computeOpenStatus(start, due, LocalDateTime.now()));
+
+        if (status == TaskStatus.COMPLETED) {
+            if (task.getCompletedAt() == null) task.setCompletedAt(LocalDateTime.now());
+            task.setSlaStatus(task.getCompletedAt().isAfter(due) ? SlaStatus.BREACHED : SlaStatus.MET);
+        } else {
+            task.setCompletedAt(null);
+            task.setSlaStatus(computeOpenStatus(start, due, LocalDateTime.now()));
+        }
     }
 
     private SlaStatus computeOpenStatus(LocalDateTime start, LocalDateTime due, LocalDateTime now) {
