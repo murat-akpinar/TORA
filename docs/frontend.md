@@ -300,7 +300,7 @@ Defined in `utils/statusColors.ts` (`getStatusColor` / `getStatusLabel`):
 - Click a month to navigate to detailed view
 
 ### SLA Badge
-Task cards show a colored SLA chip when the task has an SLA: `SLA: zamanında` (ON_TRACK, green), `SLA: riskli` (AT_RISK, peach), `SLA: aşıldı` (BREACHED, red), `SLA ✓` (MET, teal). Admin panel → **SLA** tab manages policies and shows the compliance summary.
+Task cards show a colored SLA chip when the task has an SLA: `SLA: zamanında` (ON_TRACK, green), `SLA: riskli` (AT_RISK, peach), `SLA: aşıldı` (BREACHED, red), `SLA ✓` (MET, teal). Admin panel → **SLA** tab manages policies and shows the compliance summary. The Reports task-list table (Excel export and PDF/print) includes a colored **SLA** column (Zamanında/Riskli/Aşıldı/Karşılandı).
 
 ### Task List View (`TaskListView`)
 - Table-based list with columns: title, project, assignee, label, priority, status, dates

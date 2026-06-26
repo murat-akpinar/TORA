@@ -22,4 +22,5 @@ public class TaskListReportDTO {
     private int subtaskTotal;
     private int subtaskCompleted;
     private List<SubtaskReportDTO> subtasks;
+    private String slaStatus;
 }

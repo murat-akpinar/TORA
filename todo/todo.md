@@ -240,7 +240,8 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 - [x] İhlal/risk tespiti — `@Scheduled` job (30 dk); `SLA_AT_RISK` + `SLA_BREACHED` bildirimleri (atanan + birim amiri)
 - [x] Admin panelinde **SLA politikası yönetimi** (CRUD) — `/api/admin/sla-policies`, Yönetim Paneli → SLA sekmesi
 - [x] Rapor metriği: **SLA uyum oranı** (`/api/reports/sla`) + durum sayıları; SLA sekmesinde özet kartlar
-- [ ] (Opsiyonel) Excel/PDF SLA raporu (uyum metriği var, ayrı dosya export'u eksik)
+- [x] Raporlarda SLA: **Excel ve PDF "İş Listesi" tablosuna SLA sütunu** (Zamanında/Riskli/Aşıldı/Karşılandı, renkli)
+- [ ] (Opsiyonel) Ayrı "SLA Uyumu" rapor türü/sayfası (birim bazlı uyum tablosu olarak ayrı export)
 - [ ] (Opsiyonel) Eskalasyon kuralı: ihlalde önceliği yükselt / üst amire bildir
 - [ ] (Opsiyonel) Etiket bazlı politika + ilk-yanıt (response) SLA'sı + resmi tatil takvimi
 

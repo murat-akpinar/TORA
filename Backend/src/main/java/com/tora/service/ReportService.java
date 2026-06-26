@@ -7,6 +7,7 @@ import com.tora.model.TaskStatusHistory;
 import com.tora.model.Team;
 import com.tora.model.User;
 import com.tora.model.enums.Priority;
+import com.tora.model.enums.SlaStatus;
 import com.tora.model.enums.TaskStatus;
 import com.tora.repository.*;
 import org.apache.poi.ss.usermodel.*;
@@ -256,6 +257,26 @@ public class ReportService {
         };
     }
 
+    private String translateSla(SlaStatus sla) {
+        if (sla == null) return "-";
+        return switch (sla) {
+            case ON_TRACK -> "Zamanında";
+            case AT_RISK  -> "Riskli";
+            case BREACHED -> "Aşıldı";
+            case MET      -> "Karşılandı";
+        };
+    }
+
+    private CellStyle getSlaStyle(ExcelStyles s, SlaStatus sla) {
+        if (sla == null) return s.dataEven;
+        return switch (sla) {
+            case ON_TRACK -> s.cellGreen;
+            case AT_RISK  -> s.cellYellow;
+            case BREACHED -> s.cellRed;
+            case MET      -> s.cellBlue;
+        };
+    }
+
     private CellStyle getStatusStyle(ExcelStyles s, TaskStatus status) {
         if (status == null) return s.dataEven;
         return switch (status) {
@@ -297,7 +318,7 @@ public class ReportService {
         sheet.setDefaultColumnWidth(16);
 
         int r = 0;
-        r = addSheetHeader(sheet, s, "İş Listesi", range, null, 10, r);
+        r = addSheetHeader(sheet, s, "İş Listesi", range, null, 11, r);
 
         long total      = tasks.size();
         long completed  = tasks.stream().filter(t -> t.getStatus() == TaskStatus.COMPLETED).count();
@@ -319,7 +340,7 @@ public class ReportService {
 
         sheet.createRow(r++);
 
-        String[] headers = {"#", "Başlık", "Birim", "Proje", "Öncelik", "Durum", "Başlangıç", "Bitiş", "Atananlar", "Alt İşler"};
+        String[] headers = {"#", "Başlık", "Birim", "Proje", "Öncelik", "Durum", "Başlangıç", "Bitiş", "Atananlar", "Alt İşler", "SLA"};
         Row hRow = sheet.createRow(r++);
         hRow.setHeightInPoints(22);
         for (int i = 0; i < headers.length; i++) styledCell(hRow, i, headers[i], s.columnHeader);
@@ -349,6 +370,7 @@ public class ReportService {
             styledCell(row, 9,
                 task.getSubtasks().isEmpty() ? "-" : taskStDone + "/" + task.getSubtasks().size(),
                 s.dataEven);
+            styledCell(row, 10, translateSla(task.getSlaStatus()), getSlaStyle(s, task.getSlaStatus()));
 
             List<Subtask> sortedSubs = task.getSubtasks().stream()
                 .sorted(Comparator.comparing((Subtask st) ->
@@ -370,6 +392,7 @@ public class ReportService {
                 styledCell(stRow, 7, st.getEndDate()   != null ? st.getEndDate().format(dtf)   : "-", s.subtaskRow);
                 styledCell(stRow, 8, st.getAssignee() != null ? st.getAssignee().getFullName() : "-", s.subtaskRow);
                 styledCell(stRow, 9, "", s.subtaskRow);
+                styledCell(stRow, 10, "", s.subtaskRow);
             }
         }
 
@@ -427,7 +450,8 @@ public class ReportService {
                 assigneeNames,
                 task.getSubtasks().size(),
                 (int) stDone,
-                subtaskDTOs
+                subtaskDTOs,
+                translateSla(task.getSlaStatus())
             );
         }).collect(Collectors.toList());
     }
