@@ -30,7 +30,9 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
-    
+
+    private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(SecurityConfig.class);
+
     @Autowired
     private UserDetailsService userDetailsService;
     
@@ -86,14 +88,26 @@ public class SecurityConfig {
     
     @Value("${app.cors.allowed-origins:*}")
     private String allowedOrigins;
-    
+
+    @Value("${ENFORCE_SECRET_VALIDATION:true}")
+    private boolean enforceSecretValidation;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        
+
         // Parse allowed origins from configuration
-        if ("*".equals(allowedOrigins)) {
-            // Development mode: allow all origins
+        if ("*".equals(allowedOrigins.trim())) {
+            // Wildcard origins are permissive but NOT a vulnerability here:
+            // credentials are disabled (see below) and authentication requires a
+            // bearer token in the Authorization header, which a cross-origin site
+            // cannot obtain. In production we strongly recommend an explicit
+            // origin list, so warn loudly rather than reflecting every origin
+            // silently.
+            if (enforceSecretValidation) {
+                logger.warn("CORS_ALLOWED_ORIGINS is '*' while ENFORCE_SECRET_VALIDATION=true. " +
+                    "Set an explicit origin list (e.g. https://your-domain) in production.");
+            }
             configuration.setAllowedOriginPatterns(List.of("*"));
         } else {
             // Production mode: specific origins
@@ -103,12 +117,15 @@ public class SecurityConfig {
                     .filter(s -> !s.isEmpty())
                     .toList());
         }
-        
+
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(true);
-        
+        // Authentication is carried in the Authorization header (bearer tokens),
+        // not cookies, so credentialed CORS is unnecessary. Disabling it also
+        // avoids the unsafe "reflect any origin + allow credentials" combination.
+        configuration.setAllowCredentials(false);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
