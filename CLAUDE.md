@@ -50,6 +50,19 @@ After every completed feature, refactor, bugfix, or architectural change, review
 
 > **Structural changes (new table/migration, new service/controller, auth/security/config changes, schema or API changes): updating `docs/` AND `todo.md` is mandatory, in the same change — never defer it.**
 
+## Kod Yorumları / Code Comments
+
+- **Kod içine uzun, satır satır açıklayıcı yorum yazma.** "Bu kod şunu yapar" tarzı açıklamalardan kaçın; kod kendini anlatsın.
+- Sadece **bölüm/alan başlıklarını banner ile işaretle** — açılışta ve bitişte kapanış koy. Örnek:
+
+  ```
+  // ───────────────── FRONTEND ─────────────────
+  ... kod ...
+  // ───────────────── /FRONTEND ────────────────
+  ```
+
+- İstisna: gerçekten gerekli olan **kısa, tek satırlık** "neden/dikkat" notları (bir satırı geçmeyen). Gereksiz "ne yaptığını" anlatan yorumlar yok.
+
 ## Development Notes
 
 - State management: React Context + local state (no Redux)
