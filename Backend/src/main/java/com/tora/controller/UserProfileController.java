@@ -1,6 +1,7 @@
 package com.tora.controller;
 
 import com.tora.dto.ChangePasswordRequest;
+import com.tora.dto.SessionDTO;
 import com.tora.dto.TaskDTO;
 import com.tora.dto.UserWithTasksDTO;
 import com.tora.model.LoginAttempt;
@@ -8,6 +9,7 @@ import com.tora.model.User;
 import com.tora.repository.LoginAttemptRepository;
 import com.tora.repository.TaskRepository;
 import com.tora.repository.UserRepository;
+import com.tora.service.RefreshTokenService;
 import com.tora.service.TaskService;
 import com.tora.service.UserService;
 import jakarta.validation.Valid;
@@ -39,6 +41,31 @@ public class UserProfileController {
 
     @Autowired
     private LoginAttemptRepository loginAttemptRepository;
+
+    @Autowired
+    private RefreshTokenService refreshTokenService;
+
+    @GetMapping("/sessions")
+    public ResponseEntity<List<SessionDTO>> getSessions(
+            @RequestHeader(value = "X-Refresh-Token", required = false) String refreshToken) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(refreshTokenService.getActiveSessions(username, refreshToken));
+    }
+
+    @DeleteMapping("/sessions/{id}")
+    public ResponseEntity<Void> revokeSession(@PathVariable Long id) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        boolean revoked = refreshTokenService.revokeSession(username, id);
+        return revoked ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
+    }
+
+    @PostMapping("/sessions/logout-others")
+    public ResponseEntity<Map<String, Object>> logoutOtherSessions(
+            @RequestHeader(value = "X-Refresh-Token", required = false) String refreshToken) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        long removed = refreshTokenService.logoutOtherSessions(username, refreshToken);
+        return ResponseEntity.ok(Map.of("removed", removed));
+    }
 
     @GetMapping("/login-history")
     public ResponseEntity<List<Map<String, Object>>> getLoginHistory() {

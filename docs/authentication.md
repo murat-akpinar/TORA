@@ -79,6 +79,15 @@ Login returns both an access token and a **refresh token**:
 
 > **Persistence:** Both the blacklist and refresh-token stores are **database-backed** (migration V28), so revocations survive a backend restart and are shared across multiple instances. Expired rows are purged hourly by scheduled jobs. (A future move to Redis remains optional.)
 
+### Session Management
+
+Each non-expired `refresh_tokens` row is a **session**. The IP and user-agent are captured at login and on every refresh rotation (migration V29). Self-service endpoints under `/api/users/me/sessions` let a user:
+- **List** active sessions with device/IP/date — the caller's own session is flagged `current` by matching the SHA-256 hash of the refresh token sent in the `X-Refresh-Token` header
+- **Revoke** a single session by id (ownership-checked)
+- **Log out all other sessions**, keeping only the current one
+
+Surfaced in the UI under Profile → Settings → "Aktif Oturumlar".
+
 ---
 
 ## LDAP Authentication

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
-import { userService } from '../../services/userService';
+import { userService, Session } from '../../services/userService';
 import { taskService } from '../../services/taskService';
 import { Task, TaskStatus } from '../../types/Task';
 import { getStatusLabel } from '../../utils/statusColors';
@@ -26,6 +26,9 @@ const UserProfile: React.FC = () => {
   const [openingTaskId, setOpeningTaskId] = useState<number | null>(null);
   const [loginHistory, setLoginHistory] = useState<Array<{ ipAddress: string; attemptTime: string; success: boolean }>>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
+  const [sessions, setSessions] = useState<Session[]>([]);
+  const [loadingSessions, setLoadingSessions] = useState(false);
+  const [logoutOthersPending, setLogoutOthersPending] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -37,8 +40,62 @@ const UserProfile: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'settings') {
       fetchLoginHistory();
+      fetchSessions();
     }
   }, [activeTab]);
+
+  const fetchSessions = async () => {
+    setLoadingSessions(true);
+    try {
+      const data = await userService.getSessions();
+      setSessions(data);
+    } catch {
+      // silently ignore
+    } finally {
+      setLoadingSessions(false);
+    }
+  };
+
+  const describeDevice = (userAgent: string | null): string => {
+    if (!userAgent) return 'Bilinmeyen cihaz';
+    const ua = userAgent;
+    const browser =
+      /Edg\//.test(ua) ? 'Edge' :
+      /OPR\/|Opera/.test(ua) ? 'Opera' :
+      /Chrome\//.test(ua) ? 'Chrome' :
+      /Firefox\//.test(ua) ? 'Firefox' :
+      /Safari\//.test(ua) ? 'Safari' : 'Tarayıcı';
+    const os =
+      /Windows/.test(ua) ? 'Windows' :
+      /Android/.test(ua) ? 'Android' :
+      /iPhone|iPad|iOS/.test(ua) ? 'iOS' :
+      /Mac OS X|Macintosh/.test(ua) ? 'macOS' :
+      /Linux/.test(ua) ? 'Linux' : '';
+    return os ? `${browser} · ${os}` : browser;
+  };
+
+  const handleRevokeSession = async (id: number) => {
+    try {
+      await userService.revokeSession(id);
+      notify.success('Oturum sonlandırıldı.');
+      setSessions((prev) => prev.filter((s) => s.id !== id));
+    } catch (error) {
+      notify.error(extractErrorMessage(error, 'Oturum sonlandırılamadı.'));
+    }
+  };
+
+  const handleLogoutOthers = async () => {
+    setLogoutOthersPending(true);
+    try {
+      const removed = await userService.logoutOtherSessions();
+      notify.success(removed > 0 ? `${removed} diğer oturum kapatıldı.` : 'Kapatılacak başka oturum yok.');
+      await fetchSessions();
+    } catch (error) {
+      notify.error(extractErrorMessage(error, 'Oturumlar kapatılamadı.'));
+    } finally {
+      setLogoutOthersPending(false);
+    }
+  };
 
   const fetchLoginHistory = async () => {
     setLoadingHistory(true);
@@ -601,6 +658,67 @@ const UserProfile: React.FC = () => {
                 </form>
               </div>
             </div>
+            <div className="dashboard-section full-width">
+              <div className="section-header">
+                <h3>💻 Aktif Oturumlar</h3>
+                {sessions.length > 1 && (
+                  <button
+                    className="btn-submit btn-inline"
+                    onClick={handleLogoutOthers}
+                    disabled={logoutOthersPending}
+                  >
+                    {logoutOthersPending ? 'Kapatılıyor...' : 'Diğer cihazlardan çıkış yap'}
+                  </button>
+                )}
+              </div>
+              <div className="section-content">
+                {loadingSessions ? (
+                  <div className="loading-mini">Yükleniyor...</div>
+                ) : sessions.length === 0 ? (
+                  <div className="empty-state">
+                    <span className="empty-icon">💻</span>
+                    <p>Aktif oturum bulunamadı</p>
+                  </div>
+                ) : (
+                  <div className="table-wrapper">
+                    <table className="tasks-table-v2">
+                      <thead>
+                        <tr>
+                          <th>Cihaz</th>
+                          <th>IP Adresi</th>
+                          <th>Başlangıç</th>
+                          <th>Durum</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sessions.map((s) => (
+                          <tr key={s.id}>
+                            <td className="td-title">{describeDevice(s.userAgent)}</td>
+                            <td>{s.ipAddress || '—'}</td>
+                            <td className="td-date">
+                              {new Date(s.createdAt + 'Z').toLocaleString('tr-TR')}
+                            </td>
+                            <td>
+                              {s.current ? (
+                                <span className="status-badge-v2 badge-completed">Bu cihaz</span>
+                              ) : (
+                                <button
+                                  className="session-revoke-btn"
+                                  onClick={() => handleRevokeSession(s.id)}
+                                >
+                                  Sonlandır
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="dashboard-section full-width">
               <div className="section-header">
                 <h3>🔐 Giriş Geçmişi</h3>

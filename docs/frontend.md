@@ -132,7 +132,7 @@ Frontend/src/
 | `/projects` | ProjectsPage | Required | Any | Project list |
 | `/projects/:id` | ProjectDetailPage | Required | Any | Project detail view |
 | `/admin` | AdminPanelPage | Required | ADMIN | Admin panel |
-| `/profile` | UserProfilePage | Required | Any | User profile (Dashboard / Settings tabs, login history) |
+| `/profile` | UserProfilePage | Required | Any | User profile (Dashboard / Settings tabs, login history, active sessions) |
 | `/reports` | → `/dashboard` | Required | Any | Redirect (reports surfaced within the dashboard) |
 | `/403`, `/500`, `/network-error` | ErrorPage | — | — | Dedicated error pages |
 | `*` | NotFoundPage | — | — | 404 catch-all |

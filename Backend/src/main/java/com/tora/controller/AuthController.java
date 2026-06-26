@@ -132,7 +132,8 @@ public class AuthController {
                 .map(t -> t.getId())
                 .collect(Collectors.toSet()));
             
-            String refreshToken = refreshTokenService.createRefreshToken(username);
+            String refreshToken = refreshTokenService.createRefreshToken(
+                    username, ipAddress, httpRequest.getHeader("User-Agent"));
 
             LoginResponse response = new LoginResponse();
             response.setToken(token);
@@ -181,7 +182,7 @@ public class AuthController {
     }
     
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
         String refreshToken = body.get("refreshToken");
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "refreshToken is required"));
@@ -196,7 +197,8 @@ public class AuthController {
             String newAccessToken = jwtService.generateToken(userDetails);
             // Rotate refresh token — invalidate old, issue new
             refreshTokenService.invalidate(refreshToken);
-            String newRefreshToken = refreshTokenService.createRefreshToken(username);
+            String newRefreshToken = refreshTokenService.createRefreshToken(
+                    username, getClientIpAddress(httpRequest), httpRequest.getHeader("User-Agent"));
             return ResponseEntity.ok(Map.of("token", newAccessToken, "refreshToken", newRefreshToken));
         } catch (Exception e) {
             logger.error("Failed to refresh token for user {}: {}", username, e.getMessage());

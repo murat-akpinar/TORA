@@ -63,6 +63,8 @@ TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
   - Atanan işler listesi
   - İsim değiştirme
   - Şifre değiştirme
+  - Giriş geçmişi (son 10 giriş: IP, tarih, başarı durumu)
+  - Aktif oturum yönetimi (cihaz/IP/tarih listesi, tek oturumu veya tüm diğer cihazları sonlandırma)
 - **Bildirim Sistemi**: Görev atama, durum değişimi, bitiş tarihi yaklaşımı, yorum mention bildirimleri. Header'da okunmamış sayısı + dropdown panel (okunmuş=soluk, okunmamış=canlı renk)
 - **Görev Yorumları**: Görev modalında yorum bölümü, @mention otomatik tamamlama, mention edilenlere bildirim
 - **Esnek Etiket Sistemi**: Birim bazlı görev etiketleri (task_labels), renk destekli, görev türlerinin yerini aldı

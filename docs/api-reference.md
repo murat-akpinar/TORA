@@ -575,6 +575,33 @@ Get the current user's last 10 login attempts.
 
 ---
 
+### GET `/api/users/me/sessions`
+List the current user's active sessions (one per non-expired refresh token). Send the caller's refresh token in the optional `X-Refresh-Token` header so the matching session is flagged `current`.
+
+**Response (200):**
+```json
+[
+  {
+    "id": 4,
+    "ipAddress": "172.18.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0",
+    "createdAt": "2026-06-26T17:54:45",
+    "expiresAt": "2026-07-03T17:54:45",
+    "current": true
+  }
+]
+```
+
+### DELETE `/api/users/me/sessions/{id}`
+Revoke a single session (deletes that refresh token). Ownership-checked. **204 No Content** on success, **404** if the session is not the caller's. The access token issued for that session keeps working until it expires (refresh stops working immediately).
+
+### POST `/api/users/me/sessions/logout-others`
+Revoke all of the caller's sessions except the current one (identified by the `X-Refresh-Token` header).
+
+**Response (200):** `{ "removed": 3 }`
+
+---
+
 ### GET `/api/users/me/tasks`
 Get all tasks assigned to the current user.
 

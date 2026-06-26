@@ -409,12 +409,14 @@ Kalıcı refresh token'ları (V28). Sadece SHA-256 hash saklanır, rotate-on-use
 | `id` | BIGSERIAL | NO | auto | Primary key |
 | `token_hash` | VARCHAR(64) | NO | — | Token'ın SHA-256 hash'i (unique) |
 | `username` | VARCHAR(100) | NO | — | Token'ın bağlı olduğu kullanıcı |
+| `ip_address` | VARCHAR(45) | YES | NULL | Oturumun açıldığı IP (V29) |
+| `user_agent` | VARCHAR(512) | YES | NULL | Oturum cihazı/tarayıcısı (V29) |
 | `expires_at` | TIMESTAMP | NO | — | 7 gün sonrası |
 | `created_at` | TIMESTAMP | NO | now() | Oluşturma zamanı |
 
 **Indexes**: `token_hash` (unique), `expires_at`
 
-`/api/auth/refresh` kullanımında eski satır silinip yenisi oluşturulur; süresi geçenler saatlik `@Scheduled` job ile temizlenir.
+`/api/auth/refresh` kullanımında eski satır silinip yenisi oluşturulur; süresi geçenler saatlik `@Scheduled` job ile temizlenir. Her satır aynı zamanda bir **oturum**'u temsil eder (Session Yönetimi: `GET/DELETE /api/users/me/sessions`, IP + cihaz + tarih ile listelenir).
 
 ---
 
@@ -490,6 +492,7 @@ All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
 | `V26__search_indexes.xml` | GIN full-text search indexes (tasks + projects) and `pg_trgm` trigram index (users) for global search |
 | `V27__saved_filters.xml` | Create `saved_filters` table + `idx_saved_filters_user_id` |
 | `V28__create_token_stores.xml` | Create `revoked_tokens` and `refresh_tokens` tables (persistent JWT blacklist + refresh store, SHA-256 hashed) with expiry indexes |
+| `V29__add_session_info_to_refresh_tokens.xml` | Add `ip_address` + `user_agent` to `refresh_tokens` for the session-management UI |
 
 ### Adding New Migrations
 

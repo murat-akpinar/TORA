@@ -185,10 +185,11 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 - [ ] Admin panelinde zorunlu 2FA politikası (ADMIN rolü için)
 - [ ] QR kod üretme ve doğrulama endpoint'leri
 
-### Session Yönetimi
-- [ ] Aktif refresh token listesi görünümü (cihaz/IP/tarih)
-- [ ] Tek bir session'ı sonlandırma (token invalidate)
-- [ ] "Tüm diğer cihazlardan çıkış yap" özelliği
+### Session Yönetimi ✅ (2026-06-26)
+- [x] Aktif refresh token listesi görünümü (cihaz/IP/tarih) — `GET /api/users/me/sessions`, Profil → Ayarlar → Aktif Oturumlar
+- [x] Tek bir session'ı sonlandırma (token invalidate) — `DELETE /api/users/me/sessions/{id}` (sahiplik kontrollü)
+- [x] "Tüm diğer cihazlardan çıkış yap" özelliği — `POST /api/users/me/sessions/logout-others`
+  - V29: `refresh_tokens`'a `ip_address` + `user_agent` kolonları; mevcut oturum `X-Refresh-Token` header hash eşleşmesiyle işaretleniyor
 
 ---
 

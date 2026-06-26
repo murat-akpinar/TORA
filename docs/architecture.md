@@ -125,7 +125,7 @@ TORA/
 │   │   ├── application.yml              # Main configuration
 │   │   └── db/changelog/
 │   │       ├── db.changelog-master.xml  # Liquibase master changelog
-│   │       └── changes/                 # Individual migration files (V1–V27)
+│   │       └── changes/                 # Individual migration files (V1–V29)
 │   ├── Dockerfile
 │   └── pom.xml
 ├── Frontend/
@@ -231,7 +231,7 @@ Notification ──M:1── TaskComment (optional)
 | `LdapSettingsService` | LDAP config management with AES-256 encryption |
 | `LdapImportService` | Search LDAP directory, import users into local DB |
 | `JwtService` | JWT access token generation, validation, claims extraction |
-| `RefreshTokenService` | Refresh token issue/rotate/invalidate — DB-backed (`refresh_tokens`, SHA-256 hashed, 7-day TTL, rotate-on-use, hourly cleanup) |
+| `RefreshTokenService` | Refresh token issue/rotate/invalidate — DB-backed (`refresh_tokens`, SHA-256 hashed, 7-day TTL, rotate-on-use, hourly cleanup); also powers session management (list/revoke/logout-others with IP + device) |
 | `TokenBlacklistService` | Revoked access tokens on logout — DB-backed (`revoked_tokens`, SHA-256 hashed, hourly cleanup); checked on every request |
 | `UserDetailsServiceImpl` | Spring Security `UserDetailsService` implementation — `@Cacheable("userDetails")`, evicted on user update/delete/logout |
 | `SearchService` | Global search across tasks, projects, users (PostgreSQL full-text + trigram), access-filtered |

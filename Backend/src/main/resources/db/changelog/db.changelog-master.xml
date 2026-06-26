@@ -32,6 +32,7 @@
     <include file="db/changelog/changes/V26__search_indexes.xml"/>
     <include file="db/changelog/changes/V27__saved_filters.xml"/>
     <include file="db/changelog/changes/V28__create_token_stores.xml"/>
+    <include file="db/changelog/changes/V29__add_session_info_to_refresh_tokens.xml"/>
 
 </databaseChangeLog>
 
