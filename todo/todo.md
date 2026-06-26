@@ -312,6 +312,41 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 
 ---
 
+## 🔴 Güvenlik Açıkları (Aktif Tarama — 2026-06-10)
+
+> Fable 5 ile yapılan ikinci kod taraması. Yukarıdaki 2026-06-07 bulgularından **farklı**.  
+> Doğrulandı: JWT secret default doğrulaması `JwtConfig.validateJwtSecret()` ile zaten kapalı — tekrar açılmadı.  
+> **Durum (2026-06-26): Tüm maddeler kapatıldı.** Düzeltmeler aşağıda her maddenin altında.
+
+### YÜKSEK — ✅ Kapatıldı
+
+- [x] **X-Forwarded-For spoof ile rate-limit / hesap kilidi baypası** — `AuthController.java`  
+  **Açık:** `getClientIpAddress()` önce istemci kontrolündeki `X-Forwarded-For`'u okuyup `split(",")[0]` ile ilk değeri alıyordu; nginx XFF'yi `proxy_add_x_forwarded_for` ile *eklediğinden* ilk eleman saldırganın gönderdiği değerdi → sahte XFF ile IP brute-force/lockout baypası.  
+  **Düzeltme:** `getClientIpAddress()` artık client kontrolündeki XFF'ye güvenmiyor; nginx'in set ettiği (spoof edilemez, tek değer) **`X-Real-IP`** birincil kaynak, yoksa `remoteAddr`.
+
+- [x] **Kullanıcı adı enumerasyonu — login `code` alanı** — `AuthController.java`  
+  **Açık:** Mesaj her durumda "Invalid username or password" olsa da yanıttaki `code` alanı `USER_NOT_FOUND` ↔ `INVALID_PASSWORD` olarak farklılaşıyordu.  
+  **Düzeltme:** Tüm kimlik doğrulama hataları artık tek genel **`AUTHENTICATION_FAILED`** kodu + aynı mesajı döndürüyor; `USER_NOT_FOUND`/`INVALID_PASSWORD`/`LDAP_AUTHENTICATION_FAILED` ayrımı kaldırıldı, spesifik neden yalnızca sunucu logunda.
+
+### ORTA — ✅ Kapatıldı
+
+- [x] **CORS: `allowCredentials(true)` + origin pattern `*`** — `SecurityConfig.java`  
+  **Açık:** `CORS_ALLOWED_ORIGINS=*` modunda `setAllowedOriginPatterns(["*"])` + `setAllowCredentials(true)` her origin'i credential'la yansıtıyordu.  
+  **Düzeltme:** Token Authorization header'da taşındığından **`allowCredentials(false)`** yapıldı (cookie yok) — asıl açık olan `*`+credentials yansıması ortadan kalktı. Ayrıca production'da (`ENFORCE_SECRET_VALIDATION=true`) `*` origin kullanılırsa başlangıçta **uyarı logu** basılıyor (credential'sız wildcard düşük riskli olduğundan uygulama yine başlar; açık origin listesi önerilir).
+
+- [x] **In-memory token blacklist & refresh store — kalıcı değil** — `TokenBlacklistService.java`, `RefreshTokenService.java`  
+  **Açık:** Caffeine cache tek instance ve süreç ömrüyle sınırlıydı; restart'ta blacklist temizleniyor, çok-instance'ta paylaşılmıyordu.  
+  **Düzeltme:** Her ikisi **DB'ye taşındı** (V28: `revoked_tokens`, `refresh_tokens`). Token'lar **SHA-256 hash** olarak saklanıyor (plaintext değil); blacklist JWT expiry'siyle, refresh token 7 gün TTL + rotate-on-use. Süresi dolan kayıtlar saatlik `@Scheduled` job ile temizleniyor. Restart/çok-instance güvenli. (Redis'e geçiş ileride opsiyonel.)
+
+### DÜŞÜK — ✅ Kapatıldı
+
+- [x] **LDAP test endpoint'leri ham `e.getMessage()` döndürüyor** — `LdapSettingsController.java`  
+  **Açık:** Test/güncelleme yanıtlarında iç istisna mesajı (DN, bağlantı detayı) dönebiliyordu.  
+  **Düzeltme:** Endpoint'ler artık genel mesaj döndürüyor ("Ayrıntılar sunucu loglarında"); tam istisna `logger.error` ile yalnızca sunucu loguna yazılıyor.  
+  **+ docker-compose:** Sabit DB parolası (`postgres`) → `${DB_PASSWORD:-postgres}` env değişkenine taşındı (hem `postgres.POSTGRES_PASSWORD` hem `backend.DB_PASSWORD`).
+
+---
+
 ## 🐛 Teknik Borç & İyileştirmeler
 
 ### Kod Kalitesi
@@ -319,12 +354,4 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 - [ ] Integration test — REST endpoint'leri (`@SpringBootTest` + Testcontainers)
 - [ ] E2E test — kritik akışlar (Playwright veya Cypress)
 - [ ] Frontend component test (React Testing Library)
-
-### DevOps
-- [ ] CI/CD pipeline (GitHub Actions / GitLab CI) — build + test + Docker push
-- [ ] Staging ortamı yapılandırması (`.env.staging`)
-- [ ] Sağlık kontrolü alerting (Prometheus + Grafana)
-- [ ] Merkezi log toplama (ELK stack veya Loki + Grafana)
-- [ ] Otomatik veritabanı yedekleme (pg_dump cron + S3/NFS)
-- [ ] Secrets management (HashiCorp Vault veya Docker Secrets)
 

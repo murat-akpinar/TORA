@@ -44,6 +44,12 @@ After every completed feature, refactor, bugfix, or architectural change, review
 - Database schema changed (new Liquibase migration)
 - New integration added
 
+**todo/todo.md** — always update when:
+- A planned item or security finding is implemented/closed → mark `[x]` and add a short **Düzeltme:**/result note
+- A structural change adds new work or makes a listed item obsolete
+
+> **Structural changes (new table/migration, new service/controller, auth/security/config changes, schema or API changes): updating `docs/` AND `todo.md` is mandatory, in the same change — never defer it.**
+
 ## Development Notes
 
 - State management: React Context + local state (no Redux)

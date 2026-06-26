@@ -32,8 +32,8 @@ Client                    Backend                     LDAP Server
   │                         ├── Record login attempt ──────┤
   │                         │                              │
   │                    [If auth succeeds]                   │
-  │                         ├── Generate JWT token         │
-  │◄── 200 {token, user} ──┤                              │
+  │                         ├── Generate JWT + refresh tok │
+  │◄ 200 {token,refreshToken,user} ┤                       │
   │                         │                              │
   │                    [If auth fails]                      │
   │◄── 401 Unauthorized ───┤                              │
@@ -43,15 +43,10 @@ Client                    Backend                     LDAP Server
 
 ## JWT Token
 
-### Token Structure
+### Access Token Structure
 - **Algorithm**: HMAC-SHA256 (HS256)
 - **Expiration**: 24 hours (configurable via `JWT_EXPIRATION`)
-- **Claims**:
-  - `sub`: username
-  - `roles`: list of role names
-  - `userId`: user ID
-  - `iat`: issued at timestamp
-  - `exp`: expiration timestamp
+- **Claims**: `sub` (username), `roles`, `userId`, `iat`, `exp`
 
 ### Token Usage
 Include the token in every API request:
@@ -63,8 +58,26 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIs...
 The `JwtAuthenticationFilter` intercepts every request:
 1. Extracts token from `Authorization` header
 2. Validates signature and expiration
-3. Loads `UserDetails` from database
-4. Sets `SecurityContext` for the request
+3. Checks the token against the `TokenBlacklistService` (rejects revoked tokens)
+4. Loads `UserDetails` (served from the `userDetails` Caffeine cache, 5 min TTL — avoids a DB hit per request)
+5. Sets `SecurityContext` for the request
+
+### Refresh Tokens
+
+Login returns both an access token and a **refresh token**:
+- Managed by `RefreshTokenService`, persisted in the `refresh_tokens` table (7-day TTL, **rotate-on-use**)
+- Only the **SHA-256 hash** of the token is stored (`TokenHashUtil`), never the raw value
+- `POST /api/auth/refresh` exchanges a valid refresh token for a new access token **and** a new refresh token (the old one is deleted)
+- The frontend refreshes proactively (~5 min before expiry) and reactively on a 401
+
+### Logout / Token Revocation
+
+`POST /api/auth/logout`:
+- Adds the current access token (SHA-256 hash + its JWT expiry) to the `revoked_tokens` table via `TokenBlacklistService`, so it cannot be reused before its natural expiry
+- Invalidates the supplied refresh token (row deleted)
+- Evicts the user from the `userDetails` cache
+
+> **Persistence:** Both the blacklist and refresh-token stores are **database-backed** (migration V28), so revocations survive a backend restart and are shared across multiple instances. Expired rows are purged hourly by scheduled jobs. (A future move to Redis remains optional.)
 
 ---
 
@@ -153,12 +166,14 @@ Users can have **multiple roles** (many-to-many relationship).
 ## Rate Limiting
 
 ### IP-Based Rate Limiting
-- **Technology**: Bucket4j (token bucket algorithm)
+- **Technology**: `LoginAttemptService` backed by the `login_attempts` database table (counts recent attempts per IP/username within the window). `bucket4j-core` is on the classpath but not used for this.
 - **Default limit**: 5 attempts per 15-minute window
 - **Scope**: Login endpoint only
 - **Configuration**:
   - `RATE_LIMIT_MAX_ATTEMPTS`: Max attempts per IP (default: 5)
   - `RATE_LIMIT_WINDOW_MINUTES`: Time window in minutes (default: 15)
+
+> **Client IP resolution:** `getClientIpAddress()` uses the non-spoofable `X-Real-IP` header (set by the bundled nginx to `$remote_addr`), falling back to the socket address. The client-supplied `X-Forwarded-For` is **not** trusted, because its first element is attacker-controlled and was previously usable to bypass rate limiting / account lockout.
 
 ### Account Lockout
 - **Default threshold**: 10 failed attempts
@@ -191,36 +206,57 @@ Request
   │   └── Set SecurityContext
   │
   ├── Authorization
-  │   ├── /api/auth/** → permitAll
-  │   ├── /health → permitAll
-  │   ├── /api/admin/** → hasRole(ADMIN)
-  │   └── /** → authenticated
+  │   ├── /api/auth/login, /api/auth/refresh → permitAll
+  │   ├── /health, /actuator/health → permitAll
+  │   ├── /api/admin/** → hasRole(ADMIN) (method-level @PreAuthorize)
+  │   └── /** → authenticated  (incl. /api/auth/logout, /api/auth/me, /api/auth/register)
   │
   └── Session: STATELESS (no server-side sessions)
 ```
 
+> Method-level `@PreAuthorize` (e.g. `hasRole('ADMIN')` on admin/LDAP endpoints, `register`) provides the fine-grained role checks on top of the URL rules above.
+
+### HTTP Security Headers
+
+Configured in `SecurityConfig`:
+
+| Header | Value |
+|--------|-------|
+| `X-Frame-Options` | `DENY` |
+| `X-Content-Type-Options` | `nosniff` |
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains` (1 year) |
+| `Content-Security-Policy` | `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'` |
+
 ### CORS Configuration
-- Allowed origins configurable via `CORS_ALLOWED_ORIGINS` environment variable
-- Default: `*` (all origins, development only)
-- For production, set to specific frontend URL(s)
+- Allowed origins configurable via `CORS_ALLOWED_ORIGINS` (mapped to `app.cors.allowed-origins`)
+- Default: `*` (uses `allowedOriginPatterns("*")`, **development only**)
+- **Production warning:** when `ENFORCE_SECRET_VALIDATION=true` and origins are `*`, the app logs a loud warning at startup recommending an explicit origin list (it still starts — wildcard without credentials is low-risk)
+- `allowCredentials(false)` — auth is carried in the `Authorization` header (bearer tokens), not cookies, so credentialed CORS is unnecessary and the unsafe `*`+credentials reflection is avoided
+- Methods `GET/POST/PUT/DELETE/OPTIONS`, `Authorization` exposed
 
 ### Password Security
 - **Local users**: BCrypt (Spring Security default, 10 rounds)
-- **LDAP bind password**: AES-256 encryption (stored in `ldap_settings.password_encrypted`)
-- **Encryption key**: Configurable via `ENCRYPTION_KEY` env var (minimum 32 characters)
+- **LDAP bind password**: AES-256-GCM encryption (stored in `ldap_settings.password_encrypted`)
+- **Encryption key**: Configurable via `ENCRYPTION_KEY` + `ENCRYPTION_SALT` env vars (key min 32 characters)
 
 ---
 
 ## Encryption Service
 
-The `EncryptionService` provides AES-256 encryption for sensitive data:
+The `EncryptionService` provides authenticated AES-256 encryption for sensitive data (LDAP bind password):
 
-- **Algorithm**: AES/CBC/PKCS5Padding
-- **Key derivation**: SHA-256 hash of the encryption key
-- **Usage**: LDAP bind password encryption/decryption
-- **Key management**: Set `ENCRYPTION_KEY` environment variable (minimum 32 characters)
+- **Algorithm**: `AES/GCM/NoPadding` (AES-256-GCM, 128-bit auth tag)
+- **Key derivation**: `PBKDF2WithHmacSHA256` — 65 536 iterations, 256-bit key, salt from `ENCRYPTION_SALT`
+- **IV**: Random 12-byte IV generated per encryption, prepended to the ciphertext
+- **Storage format**: `GCM:` prefix + Base64(`IV || ciphertext+tag`)
+- **Backward compatibility**: Values without the `GCM:` prefix are decrypted with the legacy `AES/ECB` scheme and transparently re-encrypted to GCM on the next update
+- **Key management**: `ENCRYPTION_KEY` env var (min 32 chars) + `ENCRYPTION_SALT` env var
 
-> **Important**: Change the default encryption key in production!
+### Startup Secret Validation
+
+Both `JwtConfig` and `EncryptionService` run a `@PostConstruct` check. When `ENFORCE_SECRET_VALIDATION=true` (the default), the application **refuses to start** if `JWT_SECRET` or `ENCRYPTION_KEY` are left at their known default values. Set `ENFORCE_SECRET_VALIDATION=false` only for local development.
+
+> **Important**: In production, set strong random `JWT_SECRET`, `ENCRYPTION_KEY`, and `ENCRYPTION_SALT` values (e.g. `openssl rand -base64 32` / `openssl rand -base64 16`).
 
 ---
 

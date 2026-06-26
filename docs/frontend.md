@@ -57,7 +57,8 @@ Frontend/src/
 │       ├── TaskModal          # Task create/edit dialog with subtasks
 │       └── TaskComments       # Yorum listesi + @mention destekli yorum formu
 ├── context/              # React Context providers
-│   └── AuthContext.tsx         # Authentication state management
+│   ├── AuthContext.tsx         # Authentication state management
+│   └── ThemeContext.tsx        # Dark/Light theme toggle (Catppuccin Mocha/Latte, localStorage)
 ├── hooks/                # Custom React hooks
 │   ├── useAuth.ts             # Auth context consumer hook
 │   ├── useSidebar.ts          # Sidebar toggle state (localStorage)
@@ -70,7 +71,9 @@ Frontend/src/
 │   ├── ProjectsPage           # Project list with filters
 │   ├── ProjectDetailPage      # Single project with Gantt & tasks
 │   ├── AdminPanelPage         # Admin panel with tabbed interface
-│   ├── UserProfilePage        # User profile management
+│   ├── UserProfilePage        # User profile (Dashboard/Settings tabs, login history)
+│   ├── ReportsPage            # Reports & analytics (performance, productivity, Excel export)
+│   ├── ErrorPage              # 403 / 500 / network error pages
 │   └── NotFoundPage           # 404 page
 ├── services/             # API service modules
 │   ├── api.ts                 # Axios instance with interceptors
@@ -83,6 +86,10 @@ Frontend/src/
 │   ├── dashboardService.ts    # Dashboard statistics
 │   ├── calendarService.ts     # Calendar data
 │   ├── notificationService.ts # Bildirim CRUD (liste, okundu, sil)
+│   ├── searchService.ts       # Global search (/api/search)
+│   ├── reportService.ts       # Reports & Excel export (/api/reports)
+│   ├── taskCommentService.ts  # Görev yorumları CRUD
+│   ├── taskLabelService.ts    # Görev etiketleri arama (/api/task-labels)
 │   ├── logService.ts          # System & task log operations
 │   ├── ldapService.ts         # LDAP import operations
 │   ├── ldapSettingsService.ts # LDAP settings management
@@ -125,8 +132,12 @@ Frontend/src/
 | `/projects` | ProjectsPage | Required | Any | Project list |
 | `/projects/:id` | ProjectDetailPage | Required | Any | Project detail view |
 | `/admin` | AdminPanelPage | Required | ADMIN | Admin panel |
-| `/profile` | UserProfilePage | Required | Any | User profile |
+| `/profile` | UserProfilePage | Required | Any | User profile (Dashboard / Settings tabs, login history) |
+| `/reports` | → `/dashboard` | Required | Any | Redirect (reports surfaced within the dashboard) |
+| `/403`, `/500`, `/network-error` | ErrorPage | — | — | Dedicated error pages |
 | `*` | NotFoundPage | — | — | 404 catch-all |
+
+> An `ErrorBoundary` wraps the app and routes uncaught render errors to `ErrorPage`.
 
 Route protection is implemented via wrapper components in `App.tsx` that check `AuthContext`.
 
@@ -150,10 +161,10 @@ All pages except `LoginPage` are loaded with `React.lazy()` + `<Suspense>` for r
 | `hasRole(role)` | `function` | Check if user has a specific role |
 
 **Token management:**
-- JWT stored in `localStorage`
-- Token expiry checked every 5 seconds
-- Auto-logout on expiration
-- Token attached to every API request via Axios interceptor
+- Access token + refresh token stored in `localStorage`
+- Access token attached to every API request via Axios request interceptor
+- A 60s interval in `AuthContext` proactively refreshes ~5 min before expiry (and once on expiry) via `POST /api/auth/refresh` (refresh token is rotated)
+- Auto-logout when the refresh token is also expired/invalid
 
 ### Component-Level State
 
@@ -177,9 +188,14 @@ Request Interceptor:
   → Adds "Authorization: Bearer <token>" header
 
 Response Interceptor:
-  → 401 on /auth/me → auto logout
-  → 403 → redirect or show error
+  → 401 on /auth/me → clear token + redirect to /login
+  → 401 elsewhere → "session expired" toast
+  → 403 → "yetkiniz yok" toast
+  → 5xx / network error → error toast
+  (X-Silent-Error: true header suppresses the toast, e.g. for polling)
 ```
+
+> Token refresh is driven by `AuthContext`, not the interceptor: a 60-second interval proactively refreshes the access token ~5 min before expiry (and once more on expiry) via `authService.refreshAccessToken()` → `POST /api/auth/refresh`.
 
 ### Service Pattern
 
@@ -224,15 +240,18 @@ The application uses the [Catppuccin Mocha](https://github.com/catppuccin/catppu
 | `--ctp-mauve` | #cba6f7 | Feature type accent |
 
 ### Task Status Colors
-| Status | Color Variable | Visual |
-|--------|---------------|--------|
-| OPEN | `--ctp-yellow` | Yellow |
-| IN_PROGRESS | `--ctp-blue` | Blue |
-| TESTING | `--ctp-mauve` | Purple |
-| COMPLETED | `--ctp-green` | Green |
-| POSTPONED | `--ctp-peach` | Peach |
-| CANCELLED | `--ctp-overlay0` | Gray |
-| OVERDUE | `--ctp-red` | Red |
+
+Defined in `utils/statusColors.ts` (`getStatusColor` / `getStatusLabel`):
+
+| Status | Hex | Visual | Label |
+|--------|-----|--------|-------|
+| OPEN | `#f5e0dc` | Rosewater | Açık |
+| IN_PROGRESS | `#89dceb` | Sky | Yapılıyor |
+| TESTING | `#cba6f7` | Mauve | Test Aşamasında |
+| COMPLETED | `#94e2d5` | Teal | Tamamlandı |
+| CANCELLED | `#7f849c` | Overlay1 | İptal Edildi |
+
+> `POSTPONED` / `OVERDUE` were removed from the `TaskStatus` enum (backend V18); the frontend no longer renders them.
 
 ### Priority Icons
 | Priority | Icon | Color |

@@ -99,17 +99,21 @@ Core task/work item records.
 | `team_id` | BIGINT | NO | — | FK → `teams.id` |
 | `project_id` | BIGINT | YES | NULL | FK → `projects.id` |
 | `created_by` | BIGINT | NO | — | FK → `users.id` |
-| `postponed_to_date` | DATE | YES | NULL | New date after postponement |
-| `postponed_from_date` | DATE | YES | NULL | Original date before postponement |
-| `is_postponed` | BOOLEAN | NO | false | Whether task has been postponed |
+| `postponed_to_date` | DATE | YES | NULL | New date after postponement (legacy) |
+| `postponed_from_date` | DATE | YES | NULL | Original date before postponement (legacy) |
+| `is_postponed` | BOOLEAN | NO | false | Whether task has been postponed (legacy flag) |
 | `created_at` | TIMESTAMP | NO | now() | Creation timestamp |
 | `updated_at` | TIMESTAMP | NO | now() | Last update timestamp |
 
-**Status values**: `OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `POSTPONED`, `CANCELLED`, `OVERDUE`
+**Status values** (`TaskStatus` enum): `OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `CANCELLED`
 
-**Task type values**: `TASK`, `FEATURE`, `BUG`, `IMPROVEMENT`, `RESEARCH`, `DOCUMENTATION`, `TEST`, `MAINTENANCE`, `MEETING`
+> The `POSTPONED` and `OVERDUE` statuses were retired in migration **V18** (existing rows migrated to `IN_PROGRESS`). The `postponed_*` / `is_postponed` columns remain for historical data but are no longer set by new status transitions.
 
-**Priority values**: `NORMAL`, `HIGH`, `URGENT`
+**Task type values** (`TaskType` enum): `TASK`, `FEATURE`, `BUG`, `IMPROVEMENT`, `RESEARCH`, `DOCUMENTATION`, `TEST`, `MAINTENANCE`, `MEETING`
+
+> `task_type` is retained on the row, but the flexible `task_labels` system (V22) is the primary categorization mechanism in the UI.
+
+**Priority values** (`Priority` enum): `NORMAL`, `HIGH`, `URGENT`
 
 ---
 
@@ -145,6 +149,7 @@ Project containers that group tasks across teams.
 | `end_date` | DATE | YES | NULL | Project deadline |
 | `status` | VARCHAR(20) | NO | `ACTIVE` | Project status (enum) |
 | `created_by` | BIGINT | NO | — | FK → `users.id` |
+| `manager_id` | BIGINT | YES | NULL | FK → `users.id` (project manager, V24) |
 | `created_at` | TIMESTAMP | NO | now() | Creation timestamp |
 | `updated_at` | TIMESTAMP | NO | now() | Last update timestamp |
 
@@ -360,6 +365,59 @@ ilgili kullanıcılara bağlanır.
 
 ---
 
+## `saved_filters`
+
+Kullanıcı başına kaydedilmiş arama/filtre tanımları (V27).
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `user_id` | BIGINT | NO | — | FK → `users.id` (sahip) |
+| `name` | VARCHAR(100) | NO | — | Filtre adı |
+| `filter_json` | TEXT | NO | — | Serileştirilmiş filtre tanımı (durum/öncelik/etiket/atanan) |
+| `created_at` | TIMESTAMP | NO | now() | Oluşturma zamanı |
+
+**Indexes**: `user_id`
+
+Kullanıcı başına maks. 20 filtre saklanır; silme işlemi sahiplik kontrolüne tabidir.
+
+---
+
+## `revoked_tokens`
+
+Logout'ta iptal edilen (blacklist) JWT access token'ları (V28). Sadece SHA-256 hash saklanır.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `token_hash` | VARCHAR(64) | NO | — | Token'ın SHA-256 hash'i (unique) |
+| `expires_at` | TIMESTAMP | NO | — | Token'ın doğal son kullanma zamanı |
+| `created_at` | TIMESTAMP | NO | now() | İptal zamanı |
+
+**Indexes**: `token_hash` (unique), `expires_at`
+
+`TokenBlacklistService` her istekte `token_hash` ile kontrol eder; süresi geçen kayıtlar saatlik `@Scheduled` job ile silinir.
+
+---
+
+## `refresh_tokens`
+
+Kalıcı refresh token'ları (V28). Sadece SHA-256 hash saklanır, rotate-on-use.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `token_hash` | VARCHAR(64) | NO | — | Token'ın SHA-256 hash'i (unique) |
+| `username` | VARCHAR(100) | NO | — | Token'ın bağlı olduğu kullanıcı |
+| `expires_at` | TIMESTAMP | NO | — | 7 gün sonrası |
+| `created_at` | TIMESTAMP | NO | now() | Oluşturma zamanı |
+
+**Indexes**: `token_hash` (unique), `expires_at`
+
+`/api/auth/refresh` kullanımında eski satır silinip yenisi oluşturulur; süresi geçenler saatlik `@Scheduled` job ile temizlenir.
+
+---
+
 ## Entity Relationship Diagram
 
 ```
@@ -425,9 +483,13 @@ All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
 | `V19__create_task_comments.xml` | Create `task_comments` and `task_comment_mentions` tables for görev yorumları |
 | `V20__create_notifications.xml` | Create `notifications` table (user-targeted in-app notifications + indexes) |
 | `V21__remove_admin_from_teams.xml` | Remove `admin` user rows from `user_teams` (yönetici birim üyesi değildir) |
-
 | `V22__add_task_labels.xml` | Create `task_labels` table; migrate existing `task_type` data to labels; add `idx_task_labels_team_id` |
 | `V23__performance_indexes.xml` | Add `idx_task_assignees_user_id`, `idx_tasks_created_by`, `idx_tasks_team_status` (bileşik) |
+| `V24__add_project_manager.xml` | Add nullable `manager_id` (FK → users) column to `projects` |
+| `V25__performance_index_start_date.xml` | Composite indexes `tasks(team_id, start_date)` and `tasks(project_id, start_date)` for year/month range filters |
+| `V26__search_indexes.xml` | GIN full-text search indexes (tasks + projects) and `pg_trgm` trigram index (users) for global search |
+| `V27__saved_filters.xml` | Create `saved_filters` table + `idx_saved_filters_user_id` |
+| `V28__create_token_stores.xml` | Create `revoked_tokens` and `refresh_tokens` tables (persistent JWT blacklist + refresh store, SHA-256 hashed) with expiry indexes |
 
 ### Adding New Migrations
 

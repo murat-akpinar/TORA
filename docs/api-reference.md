@@ -22,22 +22,55 @@ Authenticate a user (LDAP or local).
 }
 ```
 
+**Optional field:** `loginType` (`"ldap"` | `"local"`); omitted = auto (LDAP first, then local).
+
 **Response (200):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "username": "admin",
-  "fullName": "System Administrator",
-  "email": "admin@tora.local",
-  "roles": ["ADMIN"],
-  "teams": [
-    { "id": 1, "name": "Yazılım Birimi" }
-  ]
+  "refreshToken": "b1c2d3e4-...",
+  "type": "Bearer",
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@tora.local",
+    "fullName": "System Administrator",
+    "roles": ["ADMIN"],
+    "teamIds": [1]
+  }
 }
 ```
 
-**Error (401):** Invalid credentials
-**Error (429):** Rate limited (too many attempts)
+**Error (401):** Invalid credentials (`code`: `AUTHENTICATION_FAILED` / `USER_NOT_FOUND` / `INVALID_PASSWORD` / `LDAP_AUTHENTICATION_FAILED`)
+**Error (423):** Account locked (`code`: `ACCOUNT_LOCKED`)
+**Error (429):** Rate limited — too many attempts (`code`: `RATE_LIMIT_EXCEEDED`)
+
+---
+
+### POST `/api/auth/refresh`
+Exchange a refresh token for a fresh access token (the old refresh token is rotated/invalidated).
+
+**Request Body:**
+```json
+{ "refreshToken": "b1c2d3e4-..." }
+```
+
+**Response (200):**
+```json
+{ "token": "eyJhbGciOiJIUzI1NiJ9...", "refreshToken": "f5a6b7c8-..." }
+```
+
+**Error (401):** Refresh token expired or invalid
+
+---
+
+### POST `/api/auth/logout`
+Blacklist the current access token and invalidate the supplied refresh token.
+
+**Headers:** `Authorization: Bearer <access-token>`
+**Request Body (optional):** `{ "refreshToken": "b1c2d3e4-..." }`
+
+**Response: 204 No Content.**
 
 ---
 
@@ -60,8 +93,8 @@ Get the current authenticated user's information.
 
 ---
 
-### POST `/api/auth/register`
-Create a local user account.
+### POST `/api/auth/register` 🔒 ADMIN only
+Create a local user account. Requires `ADMIN` role (`@PreAuthorize`).
 
 **Request Body:**
 ```json
@@ -77,7 +110,7 @@ Create a local user account.
 ---
 
 ### GET `/api/auth/users`
-Get all users (basic info).
+Get all users as `SimpleUserDTO` (id, username, fullName only — **no email**, used for task assignment / @mention autocomplete).
 
 ---
 
@@ -475,7 +508,72 @@ Get all tasks for a specific month.
 
 ---
 
+## Search (`/api/search`)
+
+### GET `/api/search?q=<query>`
+Global search across tasks, projects, and users, filtered by the caller's access. Uses PostgreSQL full-text (`tsvector`/GIN) for tasks/projects and trigram (`pg_trgm`) for users.
+
+**Response (200):** `SearchResultDTO` with grouped `tasks`, `projects`, and `users` arrays.
+
+---
+
+## Saved Filters (`/api/saved-filters`)
+
+Per-user saved search/filter definitions (max 20 per user).
+
+### GET `/api/saved-filters`
+List the current user's saved filters.
+
+### POST `/api/saved-filters`
+Create a saved filter.
+
+**Request Body:**
+```json
+{ "name": "Acil & açık", "filterJson": "{\"status\":[\"OPEN\"],\"priority\":[\"URGENT\"]}" }
+```
+
+**Response: 201 Created** with the created `SavedFilterDTO`.
+
+### DELETE `/api/saved-filters/{id}`
+Delete a saved filter (ownership-checked). **Response: 204 No Content.**
+
+---
+
+## Task Labels (`/api/task-labels`)
+
+### GET `/api/task-labels?teamId={id}&search=<term>`
+List/search task labels for a team (`search` optional). Returns `TaskLabelDTO[]`.
+
+---
+
+## Reports (`/api/reports`)
+
+Aggregated reporting endpoints. All accept optional `teamId`, `startDate`, `endDate` (`YYYY-MM-DD`).
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/reports/performance` | Weekly/monthly performance series (`period` = `weekly`/`monthly`) |
+| `GET /api/reports/unit-comparison` | Per-team completed/overdue/total comparison |
+| `GET /api/reports/productivity` | Per-user productivity metrics |
+| `GET /api/reports/process-duration` | Task open→close duration statistics |
+| `GET /api/reports/task-list` | Filtered task list data |
+| `GET /api/reports/export/excel?type=<type>` | Download `.xlsx` export (`type` = `performance`/etc.) |
+
+---
+
 ## User Profile (`/api/users/me`)
+
+### GET `/api/users/me/login-history`
+Get the current user's last 10 login attempts.
+
+**Response (200):**
+```json
+[
+  { "ipAddress": "10.0.0.5", "attemptTime": "2026-06-25T09:12:44", "success": true }
+]
+```
+
+---
 
 ### GET `/api/users/me/tasks`
 Get all tasks assigned to the current user.
@@ -744,5 +842,6 @@ All endpoints return standard error format:
 | 401 | Unauthorized - Missing or invalid token |
 | 403 | Forbidden - Insufficient permissions |
 | 404 | Not Found - Resource doesn't exist |
+| 423 | Locked - Account temporarily locked after repeated failures |
 | 429 | Too Many Requests - Rate limited |
 | 500 | Internal Server Error |

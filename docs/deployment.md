@@ -52,12 +52,16 @@ This starts three containers:
 Create a `.env` file in the project root:
 
 ```env
+# Fail-fast if defaults are left in place (production)
+ENFORCE_SECRET_VALIDATION=true
+
 # JWT Configuration (MUST change in production)
 JWT_SECRET=your-very-long-secret-key-at-least-256-bits-for-hs256-algorithm
 JWT_EXPIRATION=86400000
 
-# Encryption Key (MUST change in production, min 32 chars)
+# Encryption (MUST change in production)
 ENCRYPTION_KEY=your-production-encryption-key-minimum-32-characters
+ENCRYPTION_SALT=random-base64-salt   # e.g. openssl rand -base64 16
 
 # CORS (set to your frontend URL in production)
 CORS_ALLOWED_ORIGINS=https://your-domain.com
@@ -77,7 +81,9 @@ CORS_ALLOWED_ORIGINS=https://your-domain.com
 | `JWT_SECRET` | `your-secret-key-...` | JWT signing secret (min 256 bits) |
 | `JWT_EXPIRATION` | `86400000` | Token expiration in ms (24 hours) |
 | **Security** | | |
-| `ENCRYPTION_KEY` | `default-encryption-...` | AES-256 encryption key (min 32 chars) |
+| `ENCRYPTION_KEY` | `default-encryption-...` | AES-256-GCM encryption key (min 32 chars) |
+| `ENCRYPTION_SALT` | `Tora-v2` | PBKDF2 key-derivation salt — set a random value in production |
+| `ENFORCE_SECRET_VALIDATION` | `true` | If `true`, the app refuses to start with default `JWT_SECRET`/`ENCRYPTION_KEY`. Set `false` only for local dev |
 | `CORS_ALLOWED_ORIGINS` | `*` | Allowed CORS origins (comma-separated) |
 | `RATE_LIMIT_MAX_ATTEMPTS` | `5` | Max login attempts per IP per window |
 | `RATE_LIMIT_WINDOW_MINUTES` | `15` | Rate limit time window |
@@ -327,8 +333,10 @@ docker logs --tail 50 tora-backend
 
 ## Production Checklist
 
+- [ ] Set `ENFORCE_SECRET_VALIDATION=true` (rejects default secrets at startup)
 - [ ] Change `JWT_SECRET` to a strong, unique secret (min 256 bits)
 - [ ] Change `ENCRYPTION_KEY` to a strong key (min 32 characters)
+- [ ] Set `ENCRYPTION_SALT` to a random value (e.g. `openssl rand -base64 16`)
 - [ ] Change default admin password after first login
 - [ ] Set `CORS_ALLOWED_ORIGINS` to your frontend domain
 - [ ] Change default PostgreSQL credentials
