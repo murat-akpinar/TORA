@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="v33_create_git_settings" author="tora">
+        <createTable tableName="git_settings">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="is_enabled" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="webhook_secret_encrypted" type="VARCHAR(500)"/>
+            <column name="mr_opened_status" type="VARCHAR(20)"/>
+            <column name="mr_merged_status" type="VARCHAR(20)"/>
+            <column name="push_status" type="VARCHAR(20)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <sql>
+            INSERT INTO git_settings (is_enabled, created_at, updated_at)
+            SELECT false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            WHERE NOT EXISTS (SELECT 1 FROM git_settings);
+        </sql>
+    </changeSet>
+
+    <changeSet id="v33_create_task_git_links" author="tora">
+        <createTable tableName="task_git_links">
+            <column name="id" type="BIGSERIAL" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="task_id" type="BIGINT">
+                <constraints nullable="false"
+                    foreignKeyName="fk_git_link_task"
+                    references="tasks(id)" deleteCascade="true"/>
+            </column>
+            <column name="platform" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="link_type" type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="external_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="url" type="VARCHAR(1000)"/>
+            <column name="title" type="VARCHAR(500)"/>
+            <column name="status" type="VARCHAR(30)"/>
+            <column name="branch" type="VARCHAR(255)"/>
+            <column name="author" type="VARCHAR(255)"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="task_git_links"
+            columnNames="task_id, platform, link_type, external_id"
+            constraintName="uq_task_git_link"/>
+        <createIndex tableName="task_git_links" indexName="idx_git_link_task">
+            <column name="task_id"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Git Otomasyonu sistem kullanicisi — changed_by/created_by referansi; listelerde cikmaz (is_active=false).
+         Rol atanmaz: aktor yalnizca FK referansi, yetki gerektirmez (mevcut 'USER' rolu de yok). -->
+    <changeSet id="v33_seed_git_system_user" author="tora">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="users"/>
+        </preConditions>
+        <sql>
+            INSERT INTO users (username, email, full_name, password, is_active, ldap_dn, created_at, updated_at)
+            VALUES ('git-otomasyonu', 'git-otomasyonu@tora.local', 'Git Otomasyonu',
+                    '!disabled-login!', false, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT (username) DO NOTHING;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

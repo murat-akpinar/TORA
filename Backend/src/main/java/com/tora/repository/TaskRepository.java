@@ -15,6 +15,9 @@ import java.util.List;
 @Repository
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
+    // Git webhook: is koduyla gorev eslemesi (TORA-nnnn)
+    java.util.Optional<Task> findByCode(String code);
+
     @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.team LEFT JOIN FETCH t.createdBy LEFT JOIN FETCH t.project WHERE t.team.id = :teamId")
     List<Task> findByTeamId(@Param("teamId") Long teamId);
 

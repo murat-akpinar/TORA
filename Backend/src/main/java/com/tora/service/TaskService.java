@@ -43,6 +43,9 @@ public class TaskService {
     
     @Autowired
     private TaskStatusHistoryRepository statusHistoryRepository;
+
+    @Autowired
+    private com.tora.repository.TaskGitLinkRepository taskGitLinkRepository;
     
     @Autowired
     private TeamService teamService;
@@ -475,7 +478,33 @@ public class TaskService {
         evictDashboardCache(task.getTeam().getId());
         return convertToDTO(task);
     }
-    
+
+    // Webhook/sistem kaynakli durum degisimi: SecurityContext yok, erisim kontrolu atlanir (aktor explicit verilir).
+    @Transactional
+    public void updateTaskStatusAsSystem(Long id, TaskStatus newStatus, User actor) {
+        Task task = taskRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Task not found"));
+        TaskStatus oldStatus = task.getStatus();
+        if (oldStatus == newStatus) return;
+
+        TaskStatusHistory history = new TaskStatusHistory();
+        history.setTask(task);
+        history.setOldStatus(oldStatus.name());
+        history.setNewStatus(newStatus.name());
+        history.setChangedBy(actor);
+        history.setChangeReason("Git webhook");
+
+        task.setStatus(newStatus);
+        task = taskRepository.save(task);
+        statusHistoryRepository.save(history);
+        slaService.recalculate(task);
+        taskLogService.logTaskAction(task, "STATUS_CHANGED", actor, "Git webhook",
+            oldStatus.name(), newStatus.name());
+        notificationService.notifyTaskStatusChanged(task, oldStatus.name(), newStatus.name(), actor);
+        publishIfCompleted(oldStatus, task, actor);
+        evictDashboardCache(task.getTeam().getId());
+    }
+
     // ───────────────── BULK OPERATIONS ─────────────────
 
     // Dış transaction yok; her görev `self` proxy üzerinden kendi tx'inde işlenir
@@ -634,9 +663,24 @@ public class TaskService {
                 return cd;
             }).collect(Collectors.toList()));
         }
+
+        var gitLinks = taskGitLinkRepository.findByTask_IdOrderByCreatedAtDesc(task.getId());
+        dto.setGitLinks(gitLinks.stream().map(l -> {
+            com.tora.dto.TaskGitLinkDTO gl = new com.tora.dto.TaskGitLinkDTO();
+            gl.setId(l.getId());
+            gl.setPlatform(l.getPlatform());
+            gl.setLinkType(l.getLinkType());
+            gl.setExternalId(l.getExternalId());
+            gl.setUrl(l.getUrl());
+            gl.setTitle(l.getTitle());
+            gl.setStatus(l.getStatus());
+            gl.setBranch(l.getBranch());
+            gl.setAuthor(l.getAuthor());
+            return gl;
+        }).collect(java.util.stream.Collectors.toList()));
         return dto;
     }
-    
+
     private SubtaskDTO convertSubtaskToDTO(Subtask subtask) {
         SubtaskDTO dto = new SubtaskDTO();
         dto.setId(subtask.getId());

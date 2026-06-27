@@ -42,4 +42,5 @@ public class TaskDTO {
     private List<TaskChainDTO> chains;
     private Long spawnedFromTaskId;
     private String spawnedFromTitle;
+    private List<TaskGitLinkDTO> gitLinks;
 }

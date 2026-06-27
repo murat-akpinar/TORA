@@ -36,6 +36,7 @@
     <include file="db/changelog/changes/V30__create_sla.xml"/>
     <include file="db/changelog/changes/V31__create_task_chains.xml"/>
     <include file="db/changelog/changes/V32__task_code.xml"/>
+    <include file="db/changelog/changes/V33__create_git_integration.xml"/>
 
 </databaseChangeLog>
 
