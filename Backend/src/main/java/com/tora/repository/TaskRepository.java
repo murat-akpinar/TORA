@@ -85,11 +85,12 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
                                                @Param("startDate") LocalDateTime startDate,
                                                @Param("endDate") LocalDateTime endDate);
 
-    // Full-text search: erişilebilir birimler içinde, tsvector + plainto_tsquery ile
+    // Full-text search: erişilebilir birimler içinde, tsvector + plainto_tsquery; ayrıca iş koduna göre (ILIKE)
     @Query(value = "SELECT t.id FROM tasks t " +
                    "WHERE t.team_id IN :teamIds " +
-                   "AND to_tsvector('simple', t.title || ' ' || coalesce(t.content, '')) " +
-                   "    @@ plainto_tsquery('simple', :query) " +
+                   "AND ( to_tsvector('simple', t.title || ' ' || coalesce(t.content, '')) " +
+                   "        @@ plainto_tsquery('simple', :query) " +
+                   "      OR t.code ILIKE '%' || :query || '%' ) " +
                    "ORDER BY ts_rank(to_tsvector('simple', t.title || ' ' || coalesce(t.content, '')), " +
                    "                 plainto_tsquery('simple', :query)) DESC " +
                    "LIMIT :lim", nativeQuery = true)
