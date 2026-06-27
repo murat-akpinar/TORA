@@ -29,6 +29,33 @@ When a trigger appears, read the corresponding `.rules/` file and apply its inst
 docker compose up --force-recreate -d
 ```
 
+## Ev Sunucusu Deploy (Remote)
+
+Proje, ev sunucusunda SSH üzerinden ayağa kaldırılır.
+
+- **Sunucu:** `ssh vaultscan` (192.168.1.131), kullanıcı `root`, Proxmox host (Docker doğrudan host üzerinde).
+- **Deploy dizini:** `/opt/TORA`
+- **Portlar:** Frontend `81`, Backend `8081`, PostgreSQL `127.0.0.1:5432`. (Sunucuda ayrıca `dockscan` stack'i 3017/3018'de çalışır — çakışma yok.)
+- **`.env` git'te yoktur** (gitignore) — kod taşırken ayrıca gönderilmelidir.
+
+Kodu taşıma (yerel çalışma ağacını, commit edilmemiş değişiklikler dahil, gönderir):
+
+```bash
+tar czf - --exclude='./.git' --exclude='./Frontend/node_modules' \
+  --exclude='./Backend/target' --exclude='./images' --exclude='./ldap_test' \
+  --exclude='./.claude' . \
+  | ssh vaultscan 'mkdir -p /opt/TORA && tar xzf - --no-same-owner -C /opt/TORA'
+```
+
+Build & başlatma:
+
+```bash
+ssh vaultscan 'cd /opt/TORA && docker compose build --no-cache && docker compose up -d'
+# Hızlı kod güncellemesi (DB korunur): ssh vaultscan 'cd /opt/TORA && ./build.sh --app'
+```
+
+Erişim: `http://192.168.1.131:81` (frontend), `http://192.168.1.131:8081` (backend API).
+
 ## Documentation Update Rules
 
 After every completed feature, refactor, bugfix, or architectural change, review and update the relevant files below. Do not skip this step.
