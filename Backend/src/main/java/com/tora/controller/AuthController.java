@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.CreateLocalUserRequest;
 import com.tora.dto.LoginRequest;
 import com.tora.dto.LoginResponse;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Kimlik Doğrulama", description = "Login, token yenileme, oturum yönetimi")
 public class AuthController {
     
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);

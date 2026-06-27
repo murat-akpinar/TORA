@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.ChangePasswordRequest;
 import com.tora.dto.SessionDTO;
 import com.tora.dto.TaskDTO;
@@ -28,6 +30,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/users/me")
+@Tag(name = "Kullanıcı Profili & Oturumlar", description = "Profil, şifre değiştirme, aktif oturum yönetimi")
 public class UserProfileController {
 
     @Autowired

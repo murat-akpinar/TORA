@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.TaskLabelDTO;
 import com.tora.service.TaskLabelService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/task-labels")
+@Tag(name = "Görev Etiketleri", description = "Esnek etiket tanımları")
 public class TaskLabelController {
 
     @Autowired

@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.LdapSettingsDTO;
 import com.tora.dto.LdapTestRequest;
 import com.tora.dto.LdapTestResponse;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/admin/ldap/settings")
 @PreAuthorize("hasAnyRole('ADMIN')")
+@Tag(name = "LDAP Ayarları", description = "LDAP bağlantı ayarları ve test (admin)")
 public class LdapSettingsController {
 
     private static final Logger logger = LoggerFactory.getLogger(LdapSettingsController.class);

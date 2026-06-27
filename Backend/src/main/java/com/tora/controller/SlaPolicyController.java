@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.CreateSlaPolicyRequest;
 import com.tora.dto.SlaPolicyDTO;
 import com.tora.service.SlaService;
@@ -15,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/sla-policies")
 @PreAuthorize("hasRole('ADMIN')")
+@Tag(name = "SLA Politikaları", description = "SLA politika tanımları CRUD (admin)")
 public class SlaPolicyController {
 
     @Autowired

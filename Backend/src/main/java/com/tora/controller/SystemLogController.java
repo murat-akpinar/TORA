@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.FrontendLogRequest;
 import com.tora.dto.SystemLogDTO;
 import com.tora.dto.SystemLogFilterRequest;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 @RestController
 @RequestMapping("/api/admin/logs")
 @PreAuthorize("hasAnyRole('ADMIN')")
+@Tag(name = "Sistem Logları", description = "Sistem ve frontend log kayıtları (admin)")
 public class SystemLogController {
     
     @Autowired

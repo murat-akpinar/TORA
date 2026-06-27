@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.*;
 import com.tora.service.ReportService;
 import com.tora.service.SlaService;
@@ -14,6 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reports")
+@Tag(name = "Raporlar", description = "Performans, birim karşılaştırma, Excel/PDF export")
 public class ReportController {
 
     @Autowired

@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.TaskCommentDTO;
 import com.tora.dto.TaskCommentRequest;
 import com.tora.service.TaskCommentService;
@@ -12,6 +14,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api")
+@Tag(name = "Görev Yorumları", description = "Görev yorumları ve @mention")
 public class TaskCommentController {
 
     @Autowired

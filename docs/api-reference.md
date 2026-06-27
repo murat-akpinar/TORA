@@ -9,6 +9,24 @@ Authorization: Bearer <jwt-token>
 
 ---
 
+## Interactive Docs — Swagger / OpenAPI
+
+An interactive Swagger UI is available **only when the backend runs with the `dev` Spring profile** (`SPRING_PROFILES_ACTIVE=dev`, the docker-compose default). In production (`prod`) springdoc is disabled and no documentation endpoint is exposed.
+
+| Endpoint | Purpose |
+|---|---|
+| `/api/docs` | Swagger UI |
+| `/api/v3/api-docs` | OpenAPI JSON spec |
+
+**Access control (defense in depth):**
+- **Nginx IP allowlist is the real gate** — `Frontend/nginx.conf` (`geo $swagger_denied`) returns `403` for any client outside the allowed ranges. Tighten this list for your environment.
+- Spring Security `permitAll`s the doc paths (the UI fetches the spec on load without a token), but every actual operation stays protected by `Authorize` (JWT) + the controller `@PreAuthorize` rules.
+- The default YAML spec URL is disabled (`disable-swagger-default-url: true`) because the Nginx 8G firewall blocks `.yaml`/`.yml` extensions.
+
+To try endpoints: open `/api/docs`, click **Authorize**, paste a JWT obtained from `/api/auth/login`.
+
+---
+
 ## Authentication (`/api/auth`)
 
 ### POST `/api/auth/login`

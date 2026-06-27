@@ -32,6 +32,8 @@ services:
       dockerfile: Dockerfile
     container_name: tora-backend
     environment:
+      # Swagger/OpenAPI yalnızca 'dev' profilinde açılır; prod için SPRING_PROFILES_ACTIVE=prod verin.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: tora

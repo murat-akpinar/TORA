@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.*;
 import com.tora.service.TaskService;
 import jakarta.validation.Valid;
@@ -13,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/tasks")
+@Tag(name = "Görevler", description = "Görev CRUD, alt görev, durum/atama, toplu işlemler")
 public class TaskController {
     
     @Autowired

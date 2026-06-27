@@ -14,9 +14,11 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 ### Kısa Vadeli
 
 #### API Dokümantasyonu (Swagger)
-- [ ] SpringDoc OpenAPI (Swagger UI) entegrasyonu
-- [ ] `/api/docs` path'inde Swagger UI (sadece admin erişimli veya dev profil)
-- [ ] Her endpoint'e `@Operation` / `@Tag`, DTO'lara `@Schema` annotation'ları
+- [x] SpringDoc OpenAPI (Swagger UI) entegrasyonu
+  - **Düzeltme:** `springdoc-openapi-starter-webmvc-ui` 2.3.0 eklendi; `OpenApiConfig` JWT bearer şeması + API bilgisi tanımlar.
+- [x] `/api/docs` path'inde Swagger UI (sadece dev profil + IP allowlist)
+  - **Düzeltme:** springdoc yalnızca `dev` profilinde açık (`application-dev.yml`), prod'da kapalı. Erişim Nginx IP allowlist ile sınırlı (`Frontend/nginx.conf` → `geo $swagger_denied`); Spring tarafı `permitAll`, operasyonlar `Authorize` + `@PreAuthorize` ile korunur. `SPRING_PROFILES_ACTIVE` docker-compose'da varsayılan `dev`.
+- [x] Her controller'a `@Tag` annotation'ı (21 controller); endpoint/DTO seviyesi `@Operation`/`@Schema` ileride zenginleştirilebilir.
 
 ### Düşük Öncelik (şimdilik gerekli görülmedi — 2026-06-27)
 
@@ -40,6 +42,7 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 - [ ] Tekrar şablonu (günlük / haftalık / aylık / özel cron)
 - [ ] Scheduled job ile otomatik görev oluşturma
 - [ ] Tekrar serisini düzenleme (bu oluşumdan itibaren / tüm seri)
+- [ ] Zincir iş bir iş kapatıldığında otomatik başka bir işin oluşması başka birim dahil
 
 #### Zaman Takibi
 - [ ] `time_entries` tablosu (görev + kullanıcı + başlangıç/bitiş)

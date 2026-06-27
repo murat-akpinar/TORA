@@ -73,6 +73,18 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/login", "/api/auth/refresh").permitAll()
                 .requestMatchers("/health").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
+                // Swagger/OpenAPI: erişim Nginx IP allowlist ile sınırlanır (asıl kapı orada).
+                // UI'ın açılışta yaptığı spec fetch'ine token eklenemediği için Spring tarafında
+                // permitAll; bu yollara yalnızca allowlist'teki IP'ler ulaşır. Operasyonlar yine
+                // Authorize'a girilen ADMIN JWT + ilgili @PreAuthorize ile korunur.
+                // springdoc tüm doküman yollarını '/api' öneki altında sunar
+                // (UI: /api/swagger-ui/**, spec: /api/v3/api-docs/**).
+                .requestMatchers(
+                    "/api/docs", "/api/docs/**",
+                    "/api/v3/api-docs/**",
+                    "/api/swagger-ui/**",
+                    "/api/webjars/**"
+                ).permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(exception -> exception

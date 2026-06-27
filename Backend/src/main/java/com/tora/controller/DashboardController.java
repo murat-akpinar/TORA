@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.DashboardDetailsDTO;
 import com.tora.dto.DashboardStatsDTO;
 import com.tora.service.DashboardService;
@@ -12,6 +14,7 @@ import java.time.LocalDate;
 
 @RestController
 @RequestMapping("/api/teams")
+@Tag(name = "Dashboard & İstatistik", description = "Birim dashboard, leaderboard ve özet metrikler")
 public class DashboardController {
     
     @Autowired
