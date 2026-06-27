@@ -34,6 +34,7 @@
     <include file="db/changelog/changes/V28__create_token_stores.xml"/>
     <include file="db/changelog/changes/V29__add_session_info_to_refresh_tokens.xml"/>
     <include file="db/changelog/changes/V30__create_sla.xml"/>
+    <include file="db/changelog/changes/V31__create_task_chains.xml"/>
 
 </databaseChangeLog>
 
