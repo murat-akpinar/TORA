@@ -149,6 +149,7 @@ Bir görev **tamamlanınca** (COMPLETED) önceden tanımlı **bir veya birden ç
 - [ ] **Durum geçişi tek noktadan değil** — status hem `updateTaskStatus` hem `updateTask` hem `createTask`'ta set ediliyor (3 yer). Yan etkiler (bildirim/log/SLA/zincir) dağınık tetikleniyor; ileride tek "status transition" yardımcısında toplanmalı (event tabanlı). Zincir için #2'de kısmen ele alındı.
 - [ ] **Ölü kolon temizliği** — `tasks.is_postponed` / `postponed_to_date` / `postponed_from_date` / `task_type` (deprecated, V18 sonrası kullanılmıyor). Bir migration'da drop edilebilir (Task.java'da not mevcut). Düşük öncelik.
 - [ ] **Durum makinesi yok** — herhangi bir durumdan herhangi birine geçişe izin var (ör. COMPLETED → OPEN serbest). İş kuralı gerekiyorsa geçiş validasyonu eklenebilir.
+- [ ] **Subtask Set + id-eşitliği** — `Task.subtasks` `Set<Subtask>`, `Subtask` `@EqualsAndHashCode(of="id")`. Henüz id almamış birden çok yeni subtask `Set`'te aynı (null id) sayılıp **çakışabilir** → tek seferde çok subtask eklenince bir kısmı düşebilir. (Zincir tarafında `chains` `List`'e çevrilerek çözüldü; subtask'ta doğrulanmalı.) Düşük-orta öncelik.
 
 - [ ] Unit test coverage — servis katmanı (JUnit 5 + Mockito)
 - [ ] Integration test — REST endpoint'leri (`@SpringBootTest` + Testcontainers)
