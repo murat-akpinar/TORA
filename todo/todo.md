@@ -11,21 +11,20 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 
 ## 🔜 Açık Backlog
 
-### 🔨 Üzerinde Çalışılıyor — Zincir Görevler (Chain Tasks)
+#### ✅ Zincir Görevler (Chain Tasks) — TAMAMLANDI (2026-06-27)
 
-> **Durum:** Tasarım onaylandı, uygulama planı hazırlanıyor. **Yarım kalırsa buradan devam.**
-> **Tasarım belgesi:** `docs/superpowers/specs/2026-06-27-zincir-gorevler-design.md`
-> **Uygulama planı:** `docs/superpowers/plans/2026-06-27-zincir-gorevler.md` (yazılıyor)
+> **Tasarım:** `docs/superpowers/specs/2026-06-27-zincir-gorevler-design.md` · **Plan:** `docs/superpowers/plans/2026-06-27-zincir-gorevler.md`
 
-Bir görev **tamamlanınca** (COMPLETED) önceden tanımlı **bir veya birden çok takip görevi** otomatik açılır (farklı birimlere de). Senaryo: "sunucu açma" işi bitince → izleme (Grafana/Zabbix) + Network birimi + Some-log işleri otomatik düşer.
+Bir görev **COMPLETED** olunca tanımlı **bir veya birden çok takip görevi** otomatik açılır (farklı birime de). Senaryo doğrulandı: "sunucu açma" bitince → izleme (Sistem) + Network işleri ilgili birimlere düştü.
 
-- [ ] V31 migration: `task_chains`, `task_chain_assignees`, `tasks.spawned_from_task_id`
-- [ ] `TaskChain` entity + `TaskChainService` (`upsertChains` + `fireIfDefined`, best-effort)
-- [ ] `updateTaskStatus` entegrasyonu (sadece COMPLETED tetikler; toplu işlemler otomatik kapsanır)
-- [ ] DTO: `TaskChainRequest`/`TaskChainDTO`, `CreateTaskRequest.chains`, `TaskDTO.chains` + `spawnedFrom`
-- [ ] Frontend: TaskModal "Tamamlanınca açılacak işler" listesi + görev detayında zincir/kaynak rozeti
-- [ ] Integration testler (üretim doğruluğu, bir-kez guard, cross-birim, no-op, bulk)
-- [ ] Regresyon kontrolü + docs güncelleme (database-schema · api-reference · architecture · frontend)
+- [x] V31 migration: `task_chains`, `task_chain_assignees`, `tasks.spawned_from_task_id`
+- [x] `TaskChain` entity + `TaskChainService` (`upsertChains` + `fireIfDefined`)
+- [x] Tetikleme: **AFTER_COMMIT + REQUIRES_NEW** event (tamamlamayı bozmaz); `updateTaskStatus` **ve** `updateTask` COMPLETED'e geçişte yayınlar; bulk otomatik kapsanır
+- [x] DTO: `TaskChainRequest`/`TaskChainDTO`, `CreateTaskRequest.chains`, `TaskDTO.chains` + `spawnedFrom`
+- [x] Frontend: TaskModal "Tamamlanınca açılacak işler" listesi + kaynak rozeti
+- [x] 5 Mockito unit testi (üretim doğruluğu, bir-kez guard, best-effort) — bir bug yakaladı (`Set`→`List`)
+- [x] Uçtan uca senaryo doğrulandı + docs güncellendi (database-schema · api-reference · architecture · frontend)
+- **Not (kapsam dışı, sonraki):** etiket/proje bazlı tekrar kullanılabilir şablon; tekrarlayan (zaman tetiklemeli) görevler
 
 **Kararlar:** inline tanım · çoklu takip · tek adım (döngüsüz) · göreli tarih · sadece COMPLETED · createdBy=tamamlayan · erişim baypas · best-effort. **Sonraki adım (kapsam dışı):** tekrar kullanılabilir şablon (etiket/proje bazlı otomatik zincir).
 

@@ -226,6 +226,7 @@ Notification ──M:1── TaskComment (optional)
 | Service | Responsibility |
 |---------|---------------|
 | `TaskService` | Task CRUD, filtering by team/year/month/project, status transitions, overdue detection |
+| `TaskChainService` | Zincir görevler: tanım upsert (`upsertChains`) + tetikleme. `onTaskCompleted` **AFTER_COMMIT + REQUIRES_NEW** dinleyici (tamamlama commit olduktan sonra ayrı tx'te çalışır → tamamlamayı bozamaz). COMPLETED'e geçişte `TaskService` `TaskCompletedEvent` yayınlar (hem `updateTaskStatus` hem `updateTask`; bulk otomatik kapsanır). Üretilen görev göreli tarih + `spawnedFrom`, hedef birim erişim baypas, bir-kez (`triggered_at`) ve best-effort |
 | `ProjectService` | Project CRUD, team assignments, task linking |
 | `TeamService` | Team retrieval, access control checks |
 | `UserService` | User profile updates, password changes |

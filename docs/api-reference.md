@@ -134,6 +134,10 @@ Get all users as `SimpleUserDTO` (id, username, fullName only — **no email**, 
 
 ## Tasks (`/api/tasks`)
 
+> **Zincir görevler (chain):** `POST`/`PUT /api/tasks` gövdesinde opsiyonel `chains` dizisi gönderilebilir; her eleman bir takip görevi tanımıdır ve kaynak görev **COMPLETED** olunca otomatik üretilir (farklı birime de). `TaskDTO` yanıtında `chains` (tanımlar) + `spawnedFromTaskId`/`spawnedFromTitle` (zincirle üretildiyse kaynağı) döner.
+>
+> `chains[]` alanları: `title` (zorunlu), `content?`, `targetTeamId` (zorunlu), `targetProjectId?`, `priority?`, `durationDays` (zorunlu, ≥0; `endDate = tamamlanma_günü + durationDays`), `assigneeIds?` (hedef birim kullanıcıları). Tetikleme sadece COMPLETED'e **geçişte**, bir kez (yeniden tamamlamada tekrarlamaz).
+
 ### GET `/api/tasks`
 List tasks with optional filters.
 

@@ -55,7 +55,7 @@ Frontend/src/
 │   ├── project/          # Project components
 │   │   └── ProjectModal       # Project create/edit dialog
 │   └── task/             # Task components
-│       ├── TaskModal          # Task create/edit dialog with subtasks
+│       ├── TaskModal          # Task create/edit dialog with subtasks + "Tamamlanınca açılacak işler" (zincir) + kaynak rozeti
 │       └── TaskComments       # Yorum listesi + @mention destekli yorum formu
 ├── context/              # React Context providers
 │   ├── AuthContext.tsx         # Authentication state management

@@ -291,6 +291,14 @@ Tracks login attempts for rate limiting and account lockout.
 
 PK: `(comment_id, user_id)`. Index: `user_id`.
 
+### `task_chain_assignees`
+| Column | Type | Description |
+|--------|------|-------------|
+| `chain_id` | BIGINT | FK → `task_chains.id`, ON DELETE CASCADE |
+| `user_id` | BIGINT | FK → `users.id`, ON DELETE CASCADE |
+
+PK: `(chain_id, user_id)`. Üretilen takip görevine atanacak (hedef birim) kullanıcılar.
+
 ---
 
 ## `notifications`
@@ -479,6 +487,31 @@ SLA çözüm-süresi politikaları (V30). Bir görev, opsiyonel **öncelik** ve/
 
 ---
 
+## `task_chains`
+
+Zincir tanımları: bir kaynak görev **COMPLETED** olunca otomatik açılacak takip görevleri. Bir kaynak görevin **birden çok** tanımı olabilir (1-N).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGSERIAL | PK |
+| `source_task_id` | BIGINT | FK → `tasks.id`, NOT NULL, ON DELETE CASCADE — tanımın bağlı olduğu kaynak görev |
+| `title` | VARCHAR(255) | NOT NULL — üretilecek takip görevinin başlığı |
+| `content` | TEXT | Opsiyonel açıklama |
+| `target_team_id` | BIGINT | FK → `teams.id`, NOT NULL — hedef birim (aynı veya farklı) |
+| `target_project_id` | BIGINT | FK → `projects.id`, nullable, ON DELETE SET NULL |
+| `priority` | VARCHAR(20) | Opsiyonel; boşsa üretimde `NORMAL` |
+| `duration_days` | INT | NOT NULL (≥0) — `end_date = tamamlanma_günü + duration_days` |
+| `triggered_at` | TIMESTAMP | Bir-kez garantisi; doluysa yeniden üretmez |
+| `created_at` / `updated_at` | TIMESTAMP | NOT NULL |
+
+Index: `idx_task_chains_source (source_task_id)`. Atananlar `task_chain_assignees` join tablosunda.
+
+**`tasks` tablosuna eklenen kolon:** `spawned_from_task_id` BIGINT, FK → `tasks.id`, nullable, **ON DELETE SET NULL** — zincirle üretilen görev kaynağını gösterir; kaynak silinse de üretilmiş görev kalır. Index: `idx_tasks_spawned_from`.
+
+Tetikleme: `updateTaskStatus`/`updateTask` COMPLETED'e geçişte `TaskCompletedEvent` yayınlar; `TaskChainService.onTaskCompleted` **AFTER_COMMIT + REQUIRES_NEW** ile dinler (tamamlamayı bozmaz). Bkz. `docs/architecture.md`.
+
+---
+
 ## Migration History
 
 All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
@@ -515,6 +548,7 @@ All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
 | `V28__create_token_stores.xml` | Create `revoked_tokens` and `refresh_tokens` tables (persistent JWT blacklist + refresh store, SHA-256 hashed) with expiry indexes |
 | `V29__add_session_info_to_refresh_tokens.xml` | Add `ip_address` + `user_agent` to `refresh_tokens` for the session-management UI |
 | `V30__create_sla.xml` | Create `sla_policies` (+ seed defaults), add `sla_due_at`/`sla_status`/`completed_at` to `tasks` with `idx_tasks_sla_status` |
+| `V31__create_task_chains.xml` | Create `task_chains` + `task_chain_assignees` (zincir görevler); add `spawned_from_task_id` to `tasks` (FK self, ON DELETE SET NULL) with indexes |
 
 ### Adding New Migrations
 
