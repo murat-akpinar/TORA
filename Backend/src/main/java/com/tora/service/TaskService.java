@@ -73,6 +73,12 @@ public class TaskService {
     @Lazy
     private TaskService self;
 
+    @Autowired
+    private TaskChainService taskChainService;
+
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
+
     /**
      * İlgili teamId ile eşleşen ve "null:" ile başlayan (tüm-birim) dashboard cache
      * girişlerini temizler. allEntries=true yerine hedefli eviction.
@@ -249,6 +255,11 @@ public class TaskService {
             }
         }
         
+        // Chain definitions (tamamlanınca açılacak takip görevleri)
+        if (request.getChains() != null) {
+            taskChainService.upsertChains(task, request.getChains());
+        }
+
         // SLA: compute due/status now that createdAt is populated
         slaService.recalculate(task);
 
@@ -354,6 +365,11 @@ public class TaskService {
             }
         }
         
+        // Chain definitions
+        if (request.getChains() != null) {
+            taskChainService.upsertChains(task, request.getChains());
+        }
+
         task = taskRepository.save(task);
 
         // SLA: recompute on update (priority/team/status may have changed)
@@ -373,9 +389,18 @@ public class TaskService {
             notificationService.notifyTaskStatusChanged(task,
                     oldTaskDTO.getStatus().name(), task.getStatus().name(), currentUser);
         }
+        // Zincir: düzenleme formundan COMPLETED'e geçilirse de tetiklensin
+        publishIfCompleted(oldTaskDTO.getStatus(), task, currentUser);
 
         evictDashboardCache(task.getTeam().getId());
         return newTaskDTO;
+    }
+
+    // Yalnızca COMPLETED'e GEÇİŞTE event yayınla; tetikleme AFTER_COMMIT'te ayrı tx'te çalışır
+    private void publishIfCompleted(TaskStatus oldStatus, Task task, User completer) {
+        if (task.getStatus() == TaskStatus.COMPLETED && oldStatus != TaskStatus.COMPLETED) {
+            eventPublisher.publishEvent(new com.tora.event.TaskCompletedEvent(task.getId(), completer.getId()));
+        }
     }
 
     public void deleteTask(Long id) {
@@ -444,6 +469,8 @@ public class TaskService {
             notificationService.notifyTaskStatusChanged(task,
                     oldStatus.name(), request.getStatus().name(), currentUser);
         }
+        // Zincir: COMPLETED'e geçişte event (bulk işlemler bu metodu çağırdığı için otomatik kapsanır)
+        publishIfCompleted(oldStatus, task, currentUser);
 
         evictDashboardCache(task.getTeam().getId());
         return convertToDTO(task);
@@ -584,6 +611,28 @@ public class TaskService {
             .collect(Collectors.toList()));
         dto.setSlaStatus(task.getSlaStatus());
         dto.setSlaDueAt(task.getSlaDueAt());
+
+        if (task.getSpawnedFrom() != null) {
+            dto.setSpawnedFromTaskId(task.getSpawnedFrom().getId());
+            dto.setSpawnedFromTitle(task.getSpawnedFrom().getTitle());
+        }
+        if (task.getChains() != null && !task.getChains().isEmpty()) {
+            dto.setChains(task.getChains().stream().map(c -> {
+                com.tora.dto.TaskChainDTO cd = new com.tora.dto.TaskChainDTO();
+                cd.setId(c.getId());
+                cd.setTitle(c.getTitle());
+                cd.setContent(c.getContent());
+                cd.setTargetTeamId(c.getTargetTeam() != null ? c.getTargetTeam().getId() : null);
+                cd.setTargetTeamName(c.getTargetTeam() != null ? c.getTargetTeam().getName() : null);
+                cd.setTargetProjectId(c.getTargetProject() != null ? c.getTargetProject().getId() : null);
+                cd.setPriority(c.getPriority());
+                cd.setDurationDays(c.getDurationDays());
+                cd.setAssigneeIds(c.getAssignees() == null ? java.util.List.of()
+                    : c.getAssignees().stream().map(User::getId).collect(Collectors.toList()));
+                cd.setTriggeredAt(c.getTriggeredAt());
+                return cd;
+            }).collect(Collectors.toList()));
+        }
         return dto;
     }
     
