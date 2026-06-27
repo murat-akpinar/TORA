@@ -19,7 +19,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-@ToString(exclude = {"subtasks", "assignees", "statusHistory", "team", "createdBy", "project"})
+@ToString(exclude = {"subtasks", "assignees", "statusHistory", "team", "createdBy", "project", "chains", "spawnedFrom"})
 public class Task {
     
     @Id
@@ -75,6 +75,15 @@ public class Task {
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @BatchSize(size = 50)
     private Set<Subtask> subtasks = new HashSet<>();
+
+    @OneToMany(mappedBy = "source", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
+    private Set<TaskChain> chains = new HashSet<>();
+
+    // Zincirle üretilen görev → kaynağı (geri bağ)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "spawned_from_task_id")
+    private Task spawnedFrom;
 
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<TaskStatusHistory> statusHistory = new HashSet<>();
