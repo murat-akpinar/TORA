@@ -578,6 +578,7 @@ public class TaskService {
     private TaskDTO convertToDTO(Task task) {
         TaskDTO dto = new TaskDTO();
         dto.setId(task.getId());
+        dto.setCode(task.getCode());
         dto.setTitle(task.getTitle());
         dto.setContent(task.getContent());
         dto.setStartDate(task.getStartDate());

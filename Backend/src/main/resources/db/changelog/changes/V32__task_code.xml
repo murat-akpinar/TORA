@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="32-1-create-task-code-seq" author="tora">
+        <sql>CREATE SEQUENCE IF NOT EXISTS task_code_seq START WITH 1 INCREMENT BY 1;</sql>
+    </changeSet>
+
+    <changeSet id="32-2-add-code-column" author="tora">
+        <addColumn tableName="tasks">
+            <column name="code" type="VARCHAR(20)"/>
+        </addColumn>
+    </changeSet>
+
+    <!-- Mevcut görevlere id sırasına göre kod ata (en eski = TORA-0001). nextval id-sırada
+         çağrılır → deterministik; sequence de doğru noktaya ilerler (yeni görevler devam eder). -->
+    <changeSet id="32-3-backfill-codes" author="tora">
+        <sql splitStatements="false"><![CDATA[
+            DO $$
+            DECLARE r RECORD;
+            BEGIN
+                FOR r IN SELECT id FROM tasks WHERE code IS NULL ORDER BY id LOOP
+                    UPDATE tasks SET code = 'TORA-' || lpad(nextval('task_code_seq')::text, 4, '0') WHERE id = r.id;
+                END LOOP;
+            END $$;
+        ]]></sql>
+    </changeSet>
+
+    <changeSet id="32-4-code-default-and-constraints" author="tora">
+        <sql>ALTER TABLE tasks ALTER COLUMN code SET DEFAULT 'TORA-' || lpad(nextval('task_code_seq')::text, 4, '0');</sql>
+        <addNotNullConstraint tableName="tasks" columnName="code" columnDataType="VARCHAR(20)"/>
+        <addUniqueConstraint tableName="tasks" columnNames="code" constraintName="uq_tasks_code"/>
+        <createIndex tableName="tasks" indexName="idx_tasks_code">
+            <column name="code"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

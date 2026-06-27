@@ -17,6 +17,7 @@ import java.util.Set;
 @AllArgsConstructor
 public class TaskDTO {
     private Long id;
+    private String code;
     private String title;
     private String content;
     private LocalDate startDate;

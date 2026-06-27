@@ -6,6 +6,8 @@ import com.tora.model.enums.Priority;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Generated;
+import org.hibernate.generator.EventType;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,7 +29,12 @@ public class Task {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    
+
+    // Kod DB tarafında üretilir (task_code_seq + DEFAULT); Hibernate insert sonrası okur, asla yazmaz
+    @Generated(event = EventType.INSERT)
+    @Column(name = "code", insertable = false, updatable = false, length = 20)
+    private String code;
+
     @Column(nullable = false, length = 255)
     private String title;
     
