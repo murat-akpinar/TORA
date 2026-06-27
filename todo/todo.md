@@ -11,6 +11,24 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 
 ## 🔜 Açık Backlog
 
+### 🔨 Üzerinde Çalışılıyor — Zincir Görevler (Chain Tasks)
+
+> **Durum:** Tasarım onaylandı, uygulama planı hazırlanıyor. **Yarım kalırsa buradan devam.**
+> **Tasarım belgesi:** `docs/superpowers/specs/2026-06-27-zincir-gorevler-design.md`
+> **Uygulama planı:** `docs/superpowers/plans/2026-06-27-zincir-gorevler.md` (yazılıyor)
+
+Bir görev **tamamlanınca** (COMPLETED) önceden tanımlı **bir veya birden çok takip görevi** otomatik açılır (farklı birimlere de). Senaryo: "sunucu açma" işi bitince → izleme (Grafana/Zabbix) + Network birimi + Some-log işleri otomatik düşer.
+
+- [ ] V31 migration: `task_chains`, `task_chain_assignees`, `tasks.spawned_from_task_id`
+- [ ] `TaskChain` entity + `TaskChainService` (`upsertChains` + `fireIfDefined`, best-effort)
+- [ ] `updateTaskStatus` entegrasyonu (sadece COMPLETED tetikler; toplu işlemler otomatik kapsanır)
+- [ ] DTO: `TaskChainRequest`/`TaskChainDTO`, `CreateTaskRequest.chains`, `TaskDTO.chains` + `spawnedFrom`
+- [ ] Frontend: TaskModal "Tamamlanınca açılacak işler" listesi + görev detayında zincir/kaynak rozeti
+- [ ] Integration testler (üretim doğruluğu, bir-kez guard, cross-birim, no-op, bulk)
+- [ ] Regresyon kontrolü + docs güncelleme (database-schema · api-reference · architecture · frontend)
+
+**Kararlar:** inline tanım · çoklu takip · tek adım (döngüsüz) · göreli tarih · sadece COMPLETED · createdBy=tamamlayan · erişim baypas · best-effort. **Sonraki adım (kapsam dışı):** tekrar kullanılabilir şablon (etiket/proje bazlı otomatik zincir).
+
 ### Kısa Vadeli
 
 #### API Dokümantasyonu (Swagger)
@@ -38,11 +56,11 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 - [ ] Gantt chart'ta bağımlılık okları
 - [ ] Bağımlı görev tamamlanmadan başlatılamaz kuralı
 
-#### Tekrarlayan Görevler
+#### Tekrarlayan Görevler (zaman tetiklemeli — zincirden sonraki iş)
 - [ ] Tekrar şablonu (günlük / haftalık / aylık / özel cron)
-- [ ] Scheduled job ile otomatik görev oluşturma
+- [ ] Scheduled job ile otomatik görev oluşturma (örn. hafta içi her gün backup-job kontrolü)
 - [ ] Tekrar serisini düzenleme (bu oluşumdan itibaren / tüm seri)
-- [ ] Zincir iş bir iş kapatıldığında otomatik başka bir işin oluşması başka birim dahil
+> Not: "iş kapanınca zincirleme yeni iş" kısmı **olay tetiklemeli** olduğu için ayrıldı → üstteki "🔨 Üzerinde Çalışılıyor — Zincir Görevler".
 
 #### Zaman Takibi
 - [ ] `time_entries` tablosu (görev + kullanıcı + başlangıç/bitiş)
@@ -95,7 +113,8 @@ Roller: `ADMIN` · `BIRIM_AMIRI` · `YAZILIMCI` · `DEVOPS` · `IS_ANALISTI` · 
 
 #### Otomasyon & Entegrasyon
 - [ ] Webhook desteği (görev olaylarında dış URL çağrısı)
-- [ ] Slack / Microsoft Teams entegrasyonu (bildirim köprüsü)
+- [ ] **Git entegrasyonu (GitLab / GitHub / Gitea)** — commit/MR/PR/issue referansıyla görev bağlama, durum senkronu (MR merge → görev kapat), webhook ile otomatik yorum/aktivite; self-hosted (Gitea/GitLab) öncelikli
+- [ ] **Slack / Microsoft Teams entegrasyonu** — bildirim köprüsü (atama/durum/SLA olayları kanala düşer) + slash-command / mesajla görev oluşturma
 - [ ] E-posta ile görev oluşturma (IMAP listener)
 - [ ] Otomatik görev atama kuralları (round-robin, birim bazlı)
 
