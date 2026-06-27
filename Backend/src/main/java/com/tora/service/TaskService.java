@@ -13,7 +13,9 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -65,6 +67,11 @@ public class TaskService {
 
     @Autowired
     private CacheManager cacheManager;
+
+    // Toplu işlemde her görevi ayrı transaction'da çalıştırmak için proxy self-referans
+    @Autowired
+    @Lazy
+    private TaskService self;
 
     /**
      * İlgili teamId ile eşleşen ve "null:" ile başlayan (tüm-birim) dashboard cache
@@ -444,6 +451,9 @@ public class TaskService {
     
     // ───────────────── BULK OPERATIONS ─────────────────
 
+    // Dış transaction yok; her görev `self` proxy üzerinden kendi tx'inde işlenir
+    // (biri DB hatası verse diğerleri etkilenmez, başarılılar kalıcı olur → doğru sayım).
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public BulkResultDTO bulkOperation(BulkTaskRequest request) {
         if (request.getTaskIds() == null || request.getTaskIds().isEmpty()) {
             throw new RuntimeException("Görev seçilmedi");
@@ -460,10 +470,10 @@ public class TaskService {
                         UpdateTaskStatusRequest sr = new UpdateTaskStatusRequest();
                         sr.setStatus(request.getStatus());
                         sr.setChangeReason(request.getChangeReason());
-                        updateTaskStatus(id, sr);
+                        self.updateTaskStatus(id, sr);
                     }
-                    case "ASSIGN" -> bulkAssign(id, request.getAssigneeId());
-                    case "DELETE" -> deleteTask(id);
+                    case "ASSIGN" -> self.bulkAssign(id, request.getAssigneeId());
+                    case "DELETE" -> self.deleteTask(id);
                     default -> throw new RuntimeException("Geçersiz işlem: " + request.getAction());
                 }
                 succeeded++;
@@ -475,7 +485,7 @@ public class TaskService {
         return new BulkResultDTO(succeeded, failed, errors);
     }
 
-    private void bulkAssign(Long id, Long assigneeId) {
+    public void bulkAssign(Long id, Long assigneeId) {
         if (assigneeId == null) throw new RuntimeException("Atanacak kullanıcı gerekli");
         Task task = taskRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Task not found"));
