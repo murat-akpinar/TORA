@@ -43,5 +43,9 @@ public class CreateTaskRequest {
     private Set<Long> assigneeIds;
     
     private List<CreateSubtaskRequest> subtasks;
+
+    // Tamamlanınca otomatik açılacak takip görevleri (zincir)
+    @jakarta.validation.Valid
+    private List<TaskChainRequest> chains;
 }
 

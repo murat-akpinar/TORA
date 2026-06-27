@@ -38,4 +38,7 @@ public class TaskDTO {
     private List<SubtaskDTO> subtasks;
     private SlaStatus slaStatus;
     private LocalDateTime slaDueAt;
+    private List<TaskChainDTO> chains;
+    private Long spawnedFromTaskId;
+    private String spawnedFromTitle;
 }
