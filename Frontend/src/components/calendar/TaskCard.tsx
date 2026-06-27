@@ -89,7 +89,14 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
             />
           )}
           <span className="priority-icon">{getPriorityIcon(task.priority)}</span>
-          <div className="task-title">{task.title}</div>
+          <div className="task-title">
+            {task.code && (
+              <span style={{ fontFamily: 'monospace', fontSize: '11px', opacity: 0.65, marginRight: '5px' }}>
+                {task.code}
+              </span>
+            )}
+            {task.title}
+          </div>
         </div>
         <div
           className="task-status-badge"

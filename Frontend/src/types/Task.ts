@@ -51,8 +51,21 @@ export interface TaskChain {
   triggeredAt?: string;
 }
 
+export interface TaskGitLink {
+  id: number;
+  platform: string;
+  linkType: 'COMMIT' | 'MR';
+  externalId: string;
+  url?: string;
+  title?: string;
+  status?: 'OPENED' | 'MERGED' | 'CLOSED' | null;
+  branch?: string;
+  author?: string;
+}
+
 export interface Task {
   id: number;
+  code?: string;
   title: string;
   content?: string;
   startDate: string;
@@ -77,6 +90,7 @@ export interface Task {
   chains?: TaskChain[];
   spawnedFromTaskId?: number;
   spawnedFromTitle?: string;
+  gitLinks?: TaskGitLink[];
 }
 
 export interface CreateTaskRequest {

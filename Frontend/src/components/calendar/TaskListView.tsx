@@ -360,6 +360,11 @@ const TaskListView: React.FC<TaskListViewProps> = ({
                             style={{ backgroundColor: task.teamColor }}
                           />
                         )}
+                        {task.code && (
+                          <span style={{ fontFamily: 'monospace', fontSize: '12px', opacity: 0.65, marginRight: '6px' }}>
+                            {task.code}
+                          </span>
+                        )}
                         <span className="task-list-title-text">{task.title}</span>
                       </div>
                     </td>

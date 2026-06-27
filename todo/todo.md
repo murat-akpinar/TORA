@@ -30,14 +30,14 @@ Bir görev **COMPLETED** olunca tanımlı **bir veya birden çok takip görevi**
 
 ### Kısa Vadeli
 
-#### İş Kodu (Task Code) Üretimi — her işe okunabilir kod
-> Git entegrasyonunun **ön koşulu**; tek başına da faydalı (insanlar "SIS-42" diye konuşur, koda göre arar).
-- [ ] `tasks.code` kolonu (VARCHAR, **unique**, **değişmez**) — oluşturmada bir kez üretilir; iş başka birime taşınsa bile kod değişmez (kimlik gibi)
-- [ ] Format: `<BİRİM_ÖNEKİ>-<sıra>` (örn. `SIS-0042`, `NET-0007`); sıra **atomik** üretilir (DB sequence / sayaç tablosu — yarış koşulu yok)
-- [ ] Birim → önek eşlemesi: Sistem=`SIS` · Network=`NET` · Yazılım=`YAZ` · Test=`TEST` · Some=`SOME` (ileride yönetilebilir)
-- [ ] Tüm üretim yolları kod alır: normal `createTask` **ve** zincirle üretilen görevler (`TaskChainService.spawn`)
-- [ ] Frontend: görev kartı/başlığında kod rozeti + koda göre arama (mevcut full-text search'e dahil)
-- [ ] Geriye dönük: mevcut işlere tek seferlik kod atama (migration changeSet)
+#### ✅ İş Kodu (Task Code) Üretimi — TAMAMLANDI (2026-06-27)
+> Git entegrasyonunun **ön koşulu**. Tasarım: `docs/superpowers/specs/2026-06-27-is-kodu-design.md`. **Karar:** tek global önek `TORA-0001` (birim öneki yerine — daha basit).
+- [x] `tasks.code` (VARCHAR(20), **unique**, **değişmez**); V32 `task_code_seq` + DEFAULT `TORA-nnnn`
+- [x] Üretim **DB düzeyi**: Hibernate `@Generated(INSERT)` → tüm insert yolları otomatik kod alır (normal görev **ve** zincir görev `TaskChainService.spawn` — E2E doğrulandı)
+- [x] Geriye dönük: mevcut işlere `id` sırasına göre kod (en eski = `TORA-0001`), idempotent backfill
+- [x] Arama: `SearchService` görevleri **koda göre** de bulur (tam + kısmi; `TORA-0002`/`0002` doğrulandı)
+- [x] Frontend: kod rozeti (TaskModal başlığı + TaskCard + TaskListView)
+- **Not (kapsam dışı):** raporlarda kod sütunu; önekin admin panelinden değiştirilmesi → ileride. **Sonraki:** Git entegrasyonu (kod = branch/MR glue).
 
 #### API Dokümantasyonu (Swagger)
 - [x] SpringDoc OpenAPI (Swagger UI) entegrasyonu
@@ -121,12 +121,16 @@ Bir görev **COMPLETED** olunca tanımlı **bir veya birden çok takip görevi**
 
 #### Otomasyon & Entegrasyon
 - [ ] Webhook desteği (görev olaylarında dış URL çağrısı)
-- [ ] **Git entegrasyonu (GitLab / GitHub / Gitea)** — iş kodu (örn. `SIS-42`) git ile iş arasındaki glue; self-hosted (Gitea/GitLab) öncelikli. **Ön koşul:** "İş Kodu Üretimi" (yukarıda).
-  - **Bağlama (kod 3 kanaldan yakalanır):** branch adı (`feature/SIS-42-...`), commit mesajı (`SIS-42 ...`), MR/PR başlık/açıklaması → webhook ile taranıp işe bağlanır
-  - **Webhook olayları:** push / MR-PR açıldı / merge → işin aktivite akışına link + not düşer
-  - **Durum senkronu:** MR açıldı → "Yapılıyor"; MR merge → "Tamamlandı" (bu zincir görevlerini bile tetikleyebilir)
-  - **Aşamalı kurulum:** önce **hafif** (webhook + kod tarama, salt-okur, git API yazma yetkisi gerekmez) → sonra **zengin** (iş içinden "Branch oluştur / MR oluştur" butonları, git API ile yazma + repo token)
-  - **Çoklu platform:** GitHub/GitLab/Gitea API farkları tek bir entegrasyon arayüzü arkasında soyutlanır
+#### ✅ Git Entegrasyonu (Inbound / Webhook) — TAMAMLANDI (2026-06-28)
+> **Tasarım:** `docs/superpowers/specs/2026-06-27-git-entegrasyonu-inbound-design.md` · **Plan:** `docs/superpowers/plans/2026-06-27-git-entegrasyonu-inbound.md`
+
+GitHub/GitLab/Gitea webhook'ları iş koduyla (`TORA-\d+`) görevlere bağlanıyor; commit/MR `task_git_links`'e idempotent yazılıyor; admin-ayarlı durum senkronu (MR merge → COMPLETED zincir görevleri de tetikliyor).
+- [x] V33 migration: `git_settings` (tek satır, secret şifreli) + `task_git_links` (unique `(task_id,platform,link_type,external_id)`) + `git-otomasyonu` sistem kullanıcısı
+- [x] Platform-bağımsız çekirdek (`GitWebhookService`) + parser/platform (`Github`/`Gitlab`/`Gitea`WebhookParser), imza doğrulama (HMAC-SHA256 / token), `HmacUtil` (constant-time)
+- [x] Ham gövde controller (`/api/webhooks/git/{platform}`, JWT'siz `permitAll`, imza ile korunur, 401/404/200), `SecurityConfig` + Nginx UA-filtre baypası (guard map)
+- [x] Durum senkronu sistem aktörü (`updateTaskStatusAsSystem`) → COMPLETED'te `TaskCompletedEvent` (çift tetikleme guard); admin ayar sayfası + TaskModal "Bağlı commit/MR" paneli (`TaskDTO.gitLinks`)
+- [x] Birim testleri: `HmacUtilTest`, 3 parser testi, `GitWebhookServiceTest`; docs güncellendi (schema · architecture · api-reference · frontend)
+- **Sonraki sub-project (backlog):** outbound (iş içinden "Branch/MR oluştur", repo token + git API yazma), aktör email-eşleme (`resolveGitActor`), smart-commit komutları (`TORA-42 #done`)
 - [ ] **Slack / Microsoft Teams entegrasyonu** — bildirim köprüsü (atama/durum/SLA olayları kanala düşer) + slash-command / mesajla görev oluşturma
 - [ ] E-posta ile görev oluşturma (IMAP listener)
 - [ ] Otomatik görev atama kuralları (round-robin, birim bazlı)
