@@ -354,6 +354,33 @@ const TaskModal: React.FC<TaskModalProps> = ({
               🔗 Bu iş, #{task.spawnedFromTaskId}{task.spawnedFromTitle ? ` «${task.spawnedFromTitle}»` : ''} tamamlanınca otomatik oluştu.
             </div>
           )}
+          {task?.gitLinks && task.gitLinks.length > 0 && (
+            <div className="form-section git-links-section">
+              <label>Bağlı commit / MR</label>
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {task.gitLinks.map((l) => (
+                  <li key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0' }}>
+                    <span style={{ fontFamily: 'monospace', fontSize: 11, opacity: 0.7 }}>
+                      {l.platform}/{l.linkType === 'MR' ? `!${l.externalId}` : l.externalId.substring(0, 8)}
+                    </span>
+                    {l.status && (
+                      <span style={{
+                        fontSize: 10, padding: '1px 6px', borderRadius: 4,
+                        background: l.status === 'MERGED' ? '#a6e3a1' : l.status === 'CLOSED' ? '#f38ba8' : '#89b4fa',
+                        color: '#11111b',
+                      }}>{l.status}</span>
+                    )}
+                    {l.url ? (
+                      <a href={l.url} target="_blank" rel="noopener noreferrer">{l.title || l.externalId}</a>
+                    ) : (
+                      <span>{l.title || l.externalId}</span>
+                    )}
+                    {l.author && <span style={{ fontSize: 11, opacity: 0.6 }}>· {l.author}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <div className="form-group">
             <label htmlFor="task-title">Başlık *</label>
             <input
