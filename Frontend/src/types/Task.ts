@@ -53,6 +53,7 @@ export interface TaskChain {
 
 export interface Task {
   id: number;
+  code?: string;
   title: string;
   content?: string;
   startDate: string;

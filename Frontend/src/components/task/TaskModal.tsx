@@ -329,7 +329,17 @@ const TaskModal: React.FC<TaskModalProps> = ({
     <div className="task-modal modal-overlay" onClick={onClose}>
       <div className="task-modal-content modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{task ? 'İş Düzenle' : 'Yeni İş Oluştur'}</h2>
+          <h2>
+            {task ? 'İş Düzenle' : 'Yeni İş Oluştur'}
+            {task?.code && (
+              <span style={{
+                marginLeft: '10px', fontSize: '13px', fontFamily: 'monospace',
+                padding: '2px 8px', borderRadius: '6px',
+                background: 'var(--ctp-surface0, #313244)', color: 'var(--ctp-subtext0, #a6adc8)',
+                verticalAlign: 'middle',
+              }}>{task.code}</span>
+            )}
+          </h2>
           <button className="modal-close" onClick={onClose}>×</button>
         </div>
 
