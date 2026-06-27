@@ -221,6 +221,24 @@ Notification ──M:1── TaskComment (optional)
 
 ---
 
+## Git Entegrasyonu (Inbound / Webhook)
+
+Git platformlarından (GitHub / GitLab / Gitea) gelen webhook'ları alıp iş koduyla (`TORA-\d+`) görevlere bağlar ve admin-ayarlı durum senkronu uygular.
+
+**Akış:**
+1. `GitWebhookController` `POST /api/webhooks/git/{platform}` — ham gövdeyi (`byte[]`) ve header'ları (lowercase map) alır. JWT'siz (`SecurityConfig` `permitAll`); güvenlik **imza** ile.
+2. `GitWebhookService.process(...)`:
+   - Entegrasyon kapalı → `DISABLED` (HTTP 200 no-op).
+   - Platforma göre `GitWebhookParser` seç (`github`=HMAC-SHA256 `x-hub-signature-256`, `gitlab`=`x-gitlab-token` eşitliği, `gitea`=HMAC-SHA256 `x-gitea-signature`). İmza ham gövde üzerinden doğrulanır (Jackson yeniden serileştirmesi imzayı bozmaz). Geçersiz → `INVALID_SIGNATURE` (HTTP 401).
+   - Parser ortak `GitEvent` üretir (`PUSH` / `MR_OPENED` / `MR_MERGED` / `MR_CLOSED`, `codeTexts`, `refs`).
+   - `extractCodes` → `TORA-\d+` (case-insensitive, distinct) → `taskRepository.findByCode` ile eşleme. Eşleşme yoksa `IGNORED`.
+   - Her ref için `task_git_links` idempotent upsert (unique `(task_id,platform,link_type,external_id)`).
+   - Durum senkronu: event tipine göre ayardaki status → `taskService.updateTaskStatusAsSystem(taskId, status, gitActor)`.
+3. **Zincir tetikleme:** `updateTaskStatusAsSystem` COMPLETED'e geçişte `publishIfCompleted` ile `TaskCompletedEvent` yayınlar → mevcut zincir görev mekanizması otomatik çalışır. Servis **ayrıca** event publish etmez (çift tetikleme guard).
+4. **Aktör izolasyonu:** webhook'ta SecurityContext yok; `updateTaskStatusAsSystem` erişim kontrolünü atlar, aktörü explicit alır. `resolveGitActor` şimdilik `git-otomasyonu` sistem kullanıcısını döner — ileride commit/MR yazarını email ile eşleme buraya eklenecek.
+
+**Nginx:** Git sunucu User-Agent'ları (`GitHub-Hookshot`, `GitLab/*`, `go-http-client`) 8G UA filtresine takılırdı; `$tora_is_webhook` + `$8g_ua_block` guard map'leriyle `/api/webhooks/git/*` yolu UA filtresinden muaf tutulur (imza koruması yeterli).
+
 ## Service Layer Summary
 
 | Service | Responsibility |
@@ -255,3 +273,5 @@ Notification ──M:1── TaskComment (optional)
 | `EncryptionService` | AES-256 encrypt/decrypt for sensitive data |
 | `LogCleanupService` | Scheduled job to purge old system_logs (30d) and task_logs (90d) |
 | `OverdueTaskService` | Scheduled job to detect and mark overdue tasks |
+| `GitSettingsService` | Git entegrasyonu ayarları (tek satır); webhook secret `EncryptionService` ile şifreli; DTO secret düz metnini asla dönmez |
+| `GitWebhookService` | Çekirdek: imza doğrula → `GitEvent` çöz → `TORA-\d+` kod çıkar → görev eşle → `task_git_links` idempotent upsert → ayarlı durum senkronu (sistem kullanıcısı, `taskService.updateTaskStatusAsSystem`). Platform-bağımsız; parser'lar `List<GitWebhookParser>` ile enjekte |

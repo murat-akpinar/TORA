@@ -315,6 +315,12 @@ Task cards show a colored SLA chip when the task has an SLA: `SLA: zamanında` (
 - Timestamp UTC düzeltmesi: backend `LocalDateTime` (timezone'suz) `Z` eklenerek UTC olarak yorumlanır
 - Bildirim tipleri: `TASK_ASSIGNED`, `TASK_STATUS_CHANGED`, `TASK_DUE_SOON`, `COMMENT_MENTION`, `COMMENT_ON_TASK`
 
+### Bağlı Commit / MR Paneli (TaskModal)
+Görev modalı, görevin `gitLinks` alanı doluysa **"Bağlı commit / MR"** salt-okur paneli gösterir (boşsa render edilmez). Her satır: `platform/externalId` (MR için `!42`, commit için kısa SHA), MR durum rozeti (`OPENED`/`MERGED`/`CLOSED`), tıklanır URL (yeni sekme) ve yazar. Veri backend `TaskDTO.gitLinks` üzerinden gelir (webhook ile `task_git_links`'e yazılır).
+
+### Admin → Git Entegrasyonu (`components/admin/GitSettings.tsx`)
+Yönetim Paneli'nde **"Git Entegrasyonu"** sekmesi: aç/kapa toggle, webhook secret input (boş = değiştirme; `secretConfigured` rozetli), 3 durum-senkron dropdown (MR açıldı / MR merge / push → ilk seçenek "Değiştirme"), ve platform başına webhook URL gösterimi (`/api/webhooks/git/{github|gitlab|gitea}`). `GET/PUT /api/admin/git/settings` (`api` instance). Status seçenekleri `TaskStatus` enum'uyla eşleşir (`OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `CANCELLED`).
+
 ---
 
 ## Error Handling

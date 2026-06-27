@@ -913,6 +913,61 @@ Get detailed system health status.
 
 ---
 
+## Git Webhook (`/api/webhooks/git`) 🔓 İmza ile korunur (JWT yok)
+
+JWT'siz (`permitAll`); güvenlik git platformunun **imzası** ile sağlanır. Ham gövde HMAC için korunur.
+
+### POST `/api/webhooks/git/{platform}`
+Git platformundan (`github` / `gitlab` / `gitea`) webhook al. Gövde ham JSON; header'lar platforma özgü imza/event taşır.
+
+**Sonuçlar:**
+| Durum | HTTP | Body `status` |
+|-------|------|---------------|
+| Entegrasyon kapalı | 200 | `disabled` |
+| İmza geçersiz / secret yok | 401 | `invalid_signature` |
+| Bilinmeyen platform | 404 | `unknown_platform` |
+| Event/kod eşleşmedi | 200 | `ignored` |
+| İşlendi | 200 | `processed`, `linked: <n>` |
+
+İmza header'ları: GitHub `X-Hub-Signature-256` (HMAC-SHA256, `sha256=` önekli), GitLab `X-Gitlab-Token` (secret eşitliği), Gitea `X-Gitea-Signature` (HMAC-SHA256 hex). Event header'ları: `X-GitHub-Event` / `X-Gitlab-Event` / `X-Gitea-Event`.
+
+İşlenince: eşleşen göreve `task_git_links` upsert + ayarlı durum senkronu (MR merge → COMPLETED ise zincir görevleri de tetiklenir).
+
+---
+
+## Admin - Git Settings (`/api/admin/git/settings`) 🔒 ADMIN only
+
+### GET `/api/admin/git/settings`
+Git entegrasyonu ayarlarını getir. Secret düz metni **dönmez** (`secretConfigured: boolean` ile durumu bildirilir).
+
+**Response (200):**
+```json
+{
+  "enabled": true,
+  "secretConfigured": true,
+  "mrOpenedStatus": "IN_PROGRESS",
+  "mrMergedStatus": "COMPLETED",
+  "pushStatus": null
+}
+```
+
+### PUT `/api/admin/git/settings`
+Ayarları güncelle. `webhookSecret` null/boş → mevcut secret korunur. Status alanları boş → ilgili event için durum senkronu yapılmaz.
+
+**Request:**
+```json
+{
+  "enabled": true,
+  "webhookSecret": "yeni-secret-veya-null",
+  "mrOpenedStatus": "IN_PROGRESS",
+  "mrMergedStatus": "COMPLETED",
+  "pushStatus": null
+}
+```
+Geçerli status değerleri: `OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `CANCELLED`.
+
+---
+
 ## Health Check (`/health`)
 
 ### GET `/health`
