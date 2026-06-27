@@ -31,6 +31,15 @@ Bir görev **tamamlanınca** (COMPLETED) önceden tanımlı **bir veya birden ç
 
 ### Kısa Vadeli
 
+#### İş Kodu (Task Code) Üretimi — her işe okunabilir kod
+> Git entegrasyonunun **ön koşulu**; tek başına da faydalı (insanlar "SIS-42" diye konuşur, koda göre arar).
+- [ ] `tasks.code` kolonu (VARCHAR, **unique**, **değişmez**) — oluşturmada bir kez üretilir; iş başka birime taşınsa bile kod değişmez (kimlik gibi)
+- [ ] Format: `<BİRİM_ÖNEKİ>-<sıra>` (örn. `SIS-0042`, `NET-0007`); sıra **atomik** üretilir (DB sequence / sayaç tablosu — yarış koşulu yok)
+- [ ] Birim → önek eşlemesi: Sistem=`SIS` · Network=`NET` · Yazılım=`YAZ` · Test=`TEST` · Some=`SOME` (ileride yönetilebilir)
+- [ ] Tüm üretim yolları kod alır: normal `createTask` **ve** zincirle üretilen görevler (`TaskChainService.spawn`)
+- [ ] Frontend: görev kartı/başlığında kod rozeti + koda göre arama (mevcut full-text search'e dahil)
+- [ ] Geriye dönük: mevcut işlere tek seferlik kod atama (migration changeSet)
+
 #### API Dokümantasyonu (Swagger)
 - [x] SpringDoc OpenAPI (Swagger UI) entegrasyonu
   - **Düzeltme:** `springdoc-openapi-starter-webmvc-ui` 2.3.0 eklendi; `OpenApiConfig` JWT bearer şeması + API bilgisi tanımlar.
@@ -113,7 +122,12 @@ Bir görev **tamamlanınca** (COMPLETED) önceden tanımlı **bir veya birden ç
 
 #### Otomasyon & Entegrasyon
 - [ ] Webhook desteği (görev olaylarında dış URL çağrısı)
-- [ ] **Git entegrasyonu (GitLab / GitHub / Gitea)** — commit/MR/PR/issue referansıyla görev bağlama, durum senkronu (MR merge → görev kapat), webhook ile otomatik yorum/aktivite; self-hosted (Gitea/GitLab) öncelikli
+- [ ] **Git entegrasyonu (GitLab / GitHub / Gitea)** — iş kodu (örn. `SIS-42`) git ile iş arasındaki glue; self-hosted (Gitea/GitLab) öncelikli. **Ön koşul:** "İş Kodu Üretimi" (yukarıda).
+  - **Bağlama (kod 3 kanaldan yakalanır):** branch adı (`feature/SIS-42-...`), commit mesajı (`SIS-42 ...`), MR/PR başlık/açıklaması → webhook ile taranıp işe bağlanır
+  - **Webhook olayları:** push / MR-PR açıldı / merge → işin aktivite akışına link + not düşer
+  - **Durum senkronu:** MR açıldı → "Yapılıyor"; MR merge → "Tamamlandı" (bu zincir görevlerini bile tetikleyebilir)
+  - **Aşamalı kurulum:** önce **hafif** (webhook + kod tarama, salt-okur, git API yazma yetkisi gerekmez) → sonra **zengin** (iş içinden "Branch oluştur / MR oluştur" butonları, git API ile yazma + repo token)
+  - **Çoklu platform:** GitHub/GitLab/Gitea API farkları tek bir entegrasyon arayüzü arkasında soyutlanır
 - [ ] **Slack / Microsoft Teams entegrasyonu** — bildirim köprüsü (atama/durum/SLA olayları kanala düşer) + slash-command / mesajla görev oluşturma
 - [ ] E-posta ile görev oluşturma (IMAP listener)
 - [ ] Otomatik görev atama kuralları (round-robin, birim bazlı)
