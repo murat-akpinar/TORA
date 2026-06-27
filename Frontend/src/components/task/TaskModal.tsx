@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { LuChevronDown, LuChevronRight, LuList } from 'react-icons/lu';
-import { Task, CreateTaskRequest, CreateSubtaskRequest, TaskStatus, Priority, UpdateTaskStatusRequest } from '../../types/Task';
+import { Task, CreateTaskRequest, CreateSubtaskRequest, TaskStatus, Priority, UpdateTaskStatusRequest, TaskChain } from '../../types/Task';
 import TagInput, { TagOption } from '../common/TagInput';
 import { Team } from '../../types/Team';
 import { User } from '../../types/User';
@@ -50,6 +50,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; teamId?: string; endDate?: string }>({});
   const [subtasksSectionOpen, setSubtasksSectionOpen] = useState(false);
+  const [chainsSectionOpen, setChainsSectionOpen] = useState(false);
   const [selectedLabels, setSelectedLabels] = useState<TagOption[]>([]);
   const toast = useToast();
 
@@ -81,7 +82,14 @@ const TaskModal: React.FC<TaskModalProps> = ({
     projectId: undefined,
     assigneeIds: [],
     subtasks: [],
+    chains: [],
   });
+
+  /** Verilen birimin üyeleri (ADMIN hariç) — zincir hedef birimi için */
+  const usersForTeam = (teamId?: number) =>
+    users.filter(
+      (u) => !u.roles?.includes('ADMIN') && (!teamId || (u.teamIds && u.teamIds.includes(teamId)))
+    );
 
   /** Ana "Atanan Kişiler" ile aynı: seçili birimin üyeleri, ADMIN hariç */
   const teamAssignableUsers = useMemo(
@@ -115,11 +123,22 @@ const TaskModal: React.FC<TaskModalProps> = ({
             endDate: s.endDate || '',
             assigneeId: s.assigneeId,
           })) || [],
+          chains: task.chains?.map(c => ({
+            id: c.id,
+            title: c.title,
+            content: c.content || '',
+            targetTeamId: c.targetTeamId,
+            targetProjectId: c.targetProjectId,
+            priority: c.priority,
+            durationDays: c.durationDays,
+            assigneeIds: c.assigneeIds || [],
+          })) || [],
         });
         setSelectedLabels(
           (task.labels || []).map((l) => ({ id: l.id, name: l.name, color: l.color }))
         );
         setSubtasksSectionOpen((task.subtasks?.length ?? 0) > 0);
+        setChainsSectionOpen((task.chains?.length ?? 0) > 0);
       } else {
         let newTeamId = 0;
         if (defaultTeamId && defaultTeamId > 0) {
@@ -138,9 +157,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
           projectId: defaultProjectId,
           assigneeIds: [],
           subtasks: [],
+          chains: [],
         });
         setSelectedLabels([]);
         setSubtasksSectionOpen(false);
+        setChainsSectionOpen(false);
       }
     }
   }, [isOpen, task, defaultTeamId, defaultProjectId, defaultStartDate, defaultEndDate, user, isAdmin]);
@@ -164,6 +185,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
     ...formData,
     labelIds: selectedLabels.filter((t) => t.id).map((t) => t.id as number),
     newLabelNames: selectedLabels.filter((t) => !t.id).map((t) => t.name),
+    chains: (formData.chains || []).filter((c) => c.title && c.title.trim()),
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -198,6 +220,13 @@ const TaskModal: React.FC<TaskModalProps> = ({
             return st.title === newSt?.title && st.content === newSt?.content;
           });
 
+        const chainsEqual = (task.chains || []).length === (formData.chains || []).length &&
+          (task.chains || []).every((c, idx) => {
+            const nc = (formData.chains || [])[idx];
+            return c.title === nc?.title && c.targetTeamId === nc?.targetTeamId
+              && c.durationDays === nc?.durationDays;
+          });
+
         const existingLabelIds = (task.labels || []).map((l) => l.id).sort((a, b) => a - b);
         const selectedLabelIds = selectedLabels.filter((t) => t.id).map((t) => t.id as number).sort((a, b) => a - b);
         const labelsEqual =
@@ -214,6 +243,7 @@ const TaskModal: React.FC<TaskModalProps> = ({
           task.projectId === formData.projectId &&
           assigneeIdsEqual &&
           subtasksEqual &&
+          chainsEqual &&
           labelsEqual;
 
         if (onlyStatusChanged) {
@@ -267,6 +297,32 @@ const TaskModal: React.FC<TaskModalProps> = ({
     setFormData({ ...formData, subtasks: newSubtasks });
   };
 
+  const addChain = () => {
+    setChainsSectionOpen(true);
+    setFormData({
+      ...formData,
+      chains: [...(formData.chains || []), {
+        title: '',
+        targetTeamId: formData.teamId || (teams[0]?.id ?? 0),
+        durationDays: 1,
+        priority: Priority.NORMAL,
+        assigneeIds: [],
+      }],
+    });
+  };
+
+  const removeChain = (index: number) => {
+    const newChains = [...(formData.chains || [])];
+    newChains.splice(index, 1);
+    setFormData({ ...formData, chains: newChains });
+  };
+
+  const updateChain = (index: number, patch: Partial<TaskChain>) => {
+    const newChains = [...(formData.chains || [])];
+    newChains[index] = { ...newChains[index], ...patch };
+    setFormData({ ...formData, chains: newChains });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -281,6 +337,11 @@ const TaskModal: React.FC<TaskModalProps> = ({
           {task && !canEdit && (
             <div className="task-modal-readonly-notice">
               Bu işi düzenleme yetkiniz yok. Yalnızca oluşturduğunuz veya size atanan işleri güncelleyebilirsiniz.
+            </div>
+          )}
+          {task?.spawnedFromTaskId && (
+            <div className="task-modal-readonly-notice">
+              🔗 Bu iş, #{task.spawnedFromTaskId}{task.spawnedFromTitle ? ` «${task.spawnedFromTitle}»` : ''} tamamlanınca otomatik oluştu.
             </div>
           )}
           <div className="form-group">
@@ -580,6 +641,129 @@ const TaskModal: React.FC<TaskModalProps> = ({
                       <button
                         type="button"
                         onClick={() => removeSubtask(index)}
+                        className="btn-remove-subtask"
+                        disabled={!canEdit}
+                      >
+                        Sil
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className={`task-modal-subtasks-panel ${chainsSectionOpen ? 'is-open' : ''}`}>
+            <div className="task-modal-subtasks-toolbar">
+              <button
+                type="button"
+                className="task-modal-subtasks-toggle"
+                onClick={() => setChainsSectionOpen((o) => !o)}
+                aria-expanded={chainsSectionOpen}
+                aria-controls="task-modal-chains-body"
+                id="task-modal-chains-heading"
+              >
+                <span className="task-modal-subtasks-chevron" aria-hidden>
+                  {chainsSectionOpen ? <LuChevronDown size={18} /> : <LuChevronRight size={18} />}
+                </span>
+                <LuList size={18} className="task-modal-subtasks-list-icon" aria-hidden />
+                <span className="task-modal-subtasks-title">Tamamlanınca açılacak işler</span>
+                {(formData.chains?.length ?? 0) > 0 && (
+                  <span className="task-modal-subtasks-count">{formData.chains?.length}</span>
+                )}
+              </button>
+              <button type="button" onClick={addChain} className="btn-add-subtask" disabled={!canEdit}>
+                İş Ekle
+              </button>
+            </div>
+            <div
+              id="task-modal-chains-body"
+              className="task-modal-subtasks-body"
+              role="region"
+              aria-labelledby="task-modal-chains-heading"
+              aria-hidden={!chainsSectionOpen}
+            >
+              <div className="subtasks-container task-modal-subtasks-inner">
+                {(formData.chains?.length ?? 0) === 0 ? (
+                  <p className="task-modal-subtasks-empty">
+                    Bu iş "Tamamlandı" olunca otomatik açılacak takip işleri. Farklı birime de düşebilir.
+                  </p>
+                ) : (
+                  formData.chains?.map((chain, index) => (
+                    <div key={index} className="subtask-item">
+                      <input
+                        type="text"
+                        placeholder="Takip işi başlığı"
+                        value={chain.title}
+                        onChange={(e) => updateChain(index, { title: e.target.value })}
+                        disabled={!canEdit}
+                      />
+                      <div className="form-row" style={{ marginTop: '8px' }}>
+                        <div className="form-group" style={{ marginBottom: '0' }}>
+                          <label style={{ fontSize: '12px', marginBottom: '3px' }}>Hedef Birim</label>
+                          <select
+                            value={chain.targetTeamId || ''}
+                            onChange={(e) => updateChain(index, { targetTeamId: parseInt(e.target.value), assigneeIds: [] })}
+                            style={{ width: '100%', padding: '6px 10px', fontSize: '14px' }}
+                            disabled={!canEdit}
+                          >
+                            <option value="">Birim seçin</option>
+                            {teams.map((t) => (
+                              <option key={t.id} value={t.id}>{t.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '0' }}>
+                          <label style={{ fontSize: '12px', marginBottom: '3px' }}>Süre (gün)</label>
+                          <input
+                            type="number"
+                            min={0}
+                            value={chain.durationDays ?? 0}
+                            onChange={(e) => updateChain(index, { durationDays: e.target.value ? parseInt(e.target.value) : 0 })}
+                            disabled={!canEdit}
+                          />
+                        </div>
+                      </div>
+                      <div className="form-row" style={{ marginTop: '8px' }}>
+                        <div className="form-group" style={{ marginBottom: '0' }}>
+                          <label style={{ fontSize: '12px', marginBottom: '3px' }}>Öncelik</label>
+                          <select
+                            value={chain.priority || Priority.NORMAL}
+                            onChange={(e) => updateChain(index, { priority: e.target.value as Priority })}
+                            style={{ width: '100%', padding: '6px 10px', fontSize: '14px' }}
+                            disabled={!canEdit}
+                          >
+                            <option value={Priority.NORMAL}>Normal</option>
+                            <option value={Priority.HIGH}>Yüksek</option>
+                            <option value={Priority.URGENT}>Acil</option>
+                          </select>
+                        </div>
+                        <div className="form-group" style={{ marginBottom: '0' }}>
+                          <label style={{ fontSize: '12px', marginBottom: '3px' }}>Atananlar (hedef birim)</label>
+                          <select
+                            multiple
+                            value={(chain.assigneeIds || []).map(String)}
+                            onChange={(e) => updateChain(index, { assigneeIds: Array.from(e.target.selectedOptions).map((o) => parseInt(o.value)) })}
+                            style={{ width: '100%', padding: '6px 10px', fontSize: '14px', minHeight: '56px' }}
+                            disabled={!canEdit || !chain.targetTeamId}
+                          >
+                            {usersForTeam(chain.targetTeamId).map((u) => (
+                              <option key={u.id} value={u.id}>{u.fullName}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <textarea
+                        placeholder="Açıklama (opsiyonel)"
+                        value={chain.content || ''}
+                        onChange={(e) => updateChain(index, { content: e.target.value })}
+                        rows={2}
+                        style={{ marginTop: '8px' }}
+                        disabled={!canEdit}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeChain(index)}
                         className="btn-remove-subtask"
                         disabled={!canEdit}
                       >

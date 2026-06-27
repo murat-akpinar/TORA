@@ -37,6 +37,20 @@ export interface Subtask {
   isCompleted: boolean;
 }
 
+// Tamamlanınca otomatik açılacak takip görevi (zincir)
+export interface TaskChain {
+  id?: number;
+  title: string;
+  content?: string;
+  targetTeamId: number;
+  targetTeamName?: string;
+  targetProjectId?: number;
+  priority?: Priority;
+  durationDays: number;
+  assigneeIds?: number[];
+  triggeredAt?: string;
+}
+
 export interface Task {
   id: number;
   title: string;
@@ -60,6 +74,9 @@ export interface Task {
   subtasks: Subtask[];
   slaStatus?: SlaStatus;
   slaDueAt?: string;
+  chains?: TaskChain[];
+  spawnedFromTaskId?: number;
+  spawnedFromTitle?: string;
 }
 
 export interface CreateTaskRequest {
@@ -75,6 +92,7 @@ export interface CreateTaskRequest {
   labelIds?: number[];
   newLabelNames?: string[];
   subtasks?: CreateSubtaskRequest[];
+  chains?: TaskChain[];
 }
 
 export interface CreateSubtaskRequest {
