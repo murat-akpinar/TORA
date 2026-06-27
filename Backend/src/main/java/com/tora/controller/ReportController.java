@@ -1,7 +1,10 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.*;
 import com.tora.service.ReportService;
+import com.tora.service.SlaService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.*;
@@ -13,10 +16,19 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reports")
+@Tag(name = "Raporlar", description = "Performans, birim karşılaştırma, Excel/PDF export")
 public class ReportController {
 
     @Autowired
     private ReportService reportService;
+
+    @Autowired
+    private SlaService slaService;
+
+    @GetMapping("/sla")
+    public ResponseEntity<SlaComplianceDTO> getSlaCompliance(@RequestParam(required = false) Long teamId) {
+        return ResponseEntity.ok(slaService.getCompliance(teamId));
+    }
 
     @GetMapping("/performance")
     public ResponseEntity<List<ReportPerformanceDTO>> getPerformance(

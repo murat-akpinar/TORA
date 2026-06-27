@@ -63,6 +63,8 @@ TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
   - Atanan işler listesi
   - İsim değiştirme
   - Şifre değiştirme
+  - Giriş geçmişi (son 10 giriş: IP, tarih, başarı durumu)
+  - Aktif oturum yönetimi (cihaz/IP/tarih listesi, tek oturumu veya tüm diğer cihazları sonlandırma)
 - **Bildirim Sistemi**: Görev atama, durum değişimi, bitiş tarihi yaklaşımı, yorum mention bildirimleri. Header'da okunmamış sayısı + dropdown panel (okunmuş=soluk, okunmamış=canlı renk)
 - **Görev Yorumları**: Görev modalında yorum bölümü, @mention otomatik tamamlama, mention edilenlere bildirim
 - **Esnek Etiket Sistemi**: Birim bazlı görev etiketleri (task_labels), renk destekli, görev türlerinin yerini aldı
@@ -70,7 +72,7 @@ TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
   - Takvim Görünümü: Günlük takvim görünümü, hafta sonu günleri soluk, responsive tasarım
   - Gantt Chart: Timeline bazlı Gantt chart, hafta seçimi, hiyerarşik subtask desteği, responsive tasarım
   - Kanban Board: Status bazlı Kanban board, her takım için ayrı, responsive tasarım
-  - Liste Görünümü: Tablo tabanlı, 20 kayıt/sayfa pagination, subtask expand/collapse
+  - Liste Görünümü: Tablo tabanlı, 20 kayıt/sayfa pagination, subtask expand/collapse, **toplu işlemler** (çoklu seçim → toplu durum/atama/silme)
 - **Aylık Görünüm**: 12 ay grid görünümü, mevsim renkleri ile, responsive grid düzeni
 - **Sidebar Toggle**: Sol menüyü gizleme/gösterme özelliği (localStorage ile state yönetimi)
 - **Proje Yönetimi**: Proje oluşturma, düzenleme, silme. Projelere ekip atama ve iş ekleme
@@ -85,6 +87,7 @@ TORA — Birimler için takvim odaklı proje ve görev yönetim platformu.
 - **Yetişmedi Hesaplama**: Otomatik yetişmedi iş tespiti
 - **Örnek Veri Ekleme**: `.env` dosyasında `SEED_SAMPLE_DATA=1` yaparak otomatik örnek veri ekleme (çoğu birimde 1 Birim Amiri + 4 personel; **Sistem Birimi** örneğinde yalnızca Melda / Murat / Mustafa üçlüsü, güncel yıl için işler ve projeler)
 - **Arama & Filtreleme**: Global header arama çubuğu (görev/proje/kullanıcı), PostgreSQL GIN full-text search (`tsvector`/`tsquery`), debounce 300 ms, varlık türüne göre gruplama, gelişmiş filtre paneli (durum, öncelik, etiket, atanan), kaydedilmiş filtreler (kullanıcı başına maks. 20)
+- **SLA Takibi**: Öncelik/birim bazlı SLA politikaları (yönetim panelinden CRUD), görev başına SLA durumu (zamanında/riskli/aşıldı/karşılandı) ve görev kartında rozet, ihlal/risk bildirimleri (scheduled job), SLA uyum oranı metriği. Opsiyonel mesai-saati (hafta sonu duraklatma) modu.
 - **Performans**: Caffeine in-memory cache (dashboard + kullanıcı detayları, 5 dk TTL), route-level lazy loading, Vite chunk splitting, DB index optimizasyonu (V23 + V25 + V26), N+1 sorgu giderimi (`@BatchSize` + JOIN FETCH), dashboard SQL aggregation, JWT filter user cache, kanban yerel state güncelleme
 - **Docker Desteği**: Tam containerized yapı, yatay ölçeklendirme için hazır
 

@@ -65,6 +65,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     List<Task> findByEndDateAndStatusNotIn(@Param("endDate") LocalDate endDate,
                                             @Param("excludedStatuses") List<TaskStatus> excludedStatuses);
 
+    @Query("SELECT t FROM Task t LEFT JOIN FETCH t.team LEFT JOIN FETCH t.assignees WHERE t.status NOT IN (:excludedStatuses)")
+    List<Task> findByStatusNotIn(@Param("excludedStatuses") List<TaskStatus> excludedStatuses);
+
+    @Query("SELECT t.slaStatus, COUNT(t) FROM Task t WHERE t.slaStatus IS NOT NULL " +
+           "AND (:teamId IS NULL OR t.team.id = :teamId) GROUP BY t.slaStatus")
+    List<Object[]> countBySlaStatus(@Param("teamId") Long teamId);
+
     @Query("SELECT DISTINCT t FROM Task t LEFT JOIN FETCH t.team LEFT JOIN FETCH t.createdBy LEFT JOIN FETCH t.project WHERE t.team.id IN :teamIds")
     List<Task> findByTeamIds(@Param("teamIds") List<Long> teamIds);
 

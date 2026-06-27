@@ -780,6 +780,33 @@
   cursor: not-allowed;
 }
 
+/* Inline action button inside a section header */
+.btn-inline {
+  margin-top: 0;
+  padding: 7px 14px;
+  font-size: 12px;
+  box-shadow: 0 2px 8px rgba(137, 180, 250, 0.25);
+}
+
+/* Per-row "end session" button */
+.session-revoke-btn {
+  padding: 4px 12px;
+  background: transparent;
+  color: var(--ctp-red);
+  border: 1px solid var(--ctp-red);
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.session-revoke-btn:hover {
+  background: var(--ctp-red);
+  color: var(--ctp-base);
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 1024px) {
   .stats-grid {

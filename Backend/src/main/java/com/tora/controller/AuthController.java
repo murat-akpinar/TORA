@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.CreateLocalUserRequest;
 import com.tora.dto.LoginRequest;
 import com.tora.dto.LoginResponse;
@@ -34,6 +36,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Kimlik Doğrulama", description = "Login, token yenileme, oturum yönetimi")
 public class AuthController {
     
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
@@ -66,13 +69,13 @@ public class AuthController {
     private UserDetailsServiceImpl userDetailsServiceImpl;
     
     private String getClientIpAddress(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader("X-Forwarded-For");
-        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
-            return xForwardedFor.split(",")[0].trim();
-        }
+        // Security: do NOT trust the client-supplied X-Forwarded-For (its first
+        // element is attacker-controlled, allowing rate-limit / lockout bypass).
+        // The reverse proxy (nginx) sets X-Real-IP = $remote_addr — a single,
+        // non-spoofable value — so prefer it, then fall back to the socket address.
         String xRealIp = request.getHeader("X-Real-IP");
-        if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
-            return xRealIp;
+        if (xRealIp != null && !xRealIp.isBlank() && !"unknown".equalsIgnoreCase(xRealIp)) {
+            return xRealIp.trim();
         }
         return request.getRemoteAddr();
     }
@@ -132,7 +135,8 @@ public class AuthController {
                 .map(t -> t.getId())
                 .collect(Collectors.toSet()));
             
-            String refreshToken = refreshTokenService.createRefreshToken(username);
+            String refreshToken = refreshTokenService.createRefreshToken(
+                    username, ipAddress, httpRequest.getHeader("User-Agent"));
 
             LoginResponse response = new LoginResponse();
             response.setToken(token);
@@ -151,26 +155,18 @@ public class AuthController {
             
             int remainingAttempts = loginAttemptService.getRemainingAttempts(username);
             Map<String, Object> error = new HashMap<>();
-            
-            // Provide more specific error messages based on exception type
-            if (errorMessage != null && errorMessage.contains("LDAP")) {
-                error.put("error", "LDAP authentication failed. Please check your credentials or contact administrator.");
-                error.put("code", "LDAP_AUTHENTICATION_FAILED");
-            } else if (errorMessage != null && errorMessage.contains("User not found")) {
-                error.put("error", "Invalid username or password");
-                error.put("code", "USER_NOT_FOUND");
-            } else if (errorMessage != null && errorMessage.contains("Invalid password")) {
-                error.put("error", "Invalid username or password");
-                error.put("code", "INVALID_PASSWORD");
-            } else {
-                error.put("error", "Invalid username or password");
-                error.put("code", "AUTHENTICATION_FAILED");
-            }
-            
+
+            // Security: return one identical response for every credential failure
+            // (unknown user, wrong password, LDAP failure) so the response cannot be
+            // used to enumerate valid usernames. The specific cause is only logged
+            // server-side above.
+            error.put("error", "Invalid username or password");
+            error.put("code", "AUTHENTICATION_FAILED");
+
             if (remainingAttempts < 5) {
                 error.put("remainingAttempts", remainingAttempts);
             }
-            
+
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
         } catch (Exception e) {
             // Handle unexpected errors
@@ -189,7 +185,7 @@ public class AuthController {
     }
     
     @PostMapping("/refresh")
-    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body) {
+    public ResponseEntity<?> refresh(@RequestBody Map<String, String> body, HttpServletRequest httpRequest) {
         String refreshToken = body.get("refreshToken");
         if (refreshToken == null || refreshToken.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "refreshToken is required"));
@@ -204,7 +200,8 @@ public class AuthController {
             String newAccessToken = jwtService.generateToken(userDetails);
             // Rotate refresh token — invalidate old, issue new
             refreshTokenService.invalidate(refreshToken);
-            String newRefreshToken = refreshTokenService.createRefreshToken(username);
+            String newRefreshToken = refreshTokenService.createRefreshToken(
+                    username, getClientIpAddress(httpRequest), httpRequest.getHeader("User-Agent"));
             return ResponseEntity.ok(Map.of("token", newAccessToken, "refreshToken", newRefreshToken));
         } catch (Exception e) {
             logger.error("Failed to refresh token for user {}: {}", username, e.getMessage());

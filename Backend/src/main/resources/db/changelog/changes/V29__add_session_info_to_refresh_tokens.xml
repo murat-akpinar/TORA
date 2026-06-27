@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- Session-management metadata for refresh tokens: each active refresh
+         token represents a session, shown to the user with its IP and device. -->
+
+    <changeSet id="add_session_info_to_refresh_tokens" author="system">
+        <addColumn tableName="refresh_tokens">
+            <column name="ip_address" type="VARCHAR(45)"/>
+            <column name="user_agent" type="VARCHAR(512)"/>
+        </addColumn>
+    </changeSet>
+
+</databaseChangeLog>

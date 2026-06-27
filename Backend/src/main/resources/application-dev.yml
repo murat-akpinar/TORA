@@ -1,0 +1,8 @@
+# 'dev' profili — Swagger / OpenAPI dokümantasyonunu açar.
+# Aktivasyon: SPRING_PROFILES_ACTIVE=dev (docker-compose'da varsayılan).
+# Prod'da bu profil yüklenmez → springdoc kapalı kalır.
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true

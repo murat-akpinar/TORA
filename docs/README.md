@@ -20,13 +20,16 @@
 TORA is a full-stack web application built with **Spring Boot 3.2** (Java 17) and **React 18** (TypeScript). It provides:
 
 - **Multi-level authorization**: Admin > Department Head > Staff
-- **Hybrid authentication**: LDAP + Local users with JWT tokens
-- **Task management**: Calendar, Gantt chart, and Kanban board views
-- **Project management**: Multi-team projects with progress tracking
+- **Hybrid authentication**: LDAP + Local users with JWT access + rotating refresh tokens
+- **Task management**: Calendar, Week, 12-month, Gantt chart, Kanban, and List views
+- **Project management**: Multi-team projects with progress tracking and a project manager
+- **Search & filters**: Global full-text search (tasks/projects/users) + saved filters
+- **Reports**: Performance, productivity, unit-comparison metrics with Excel export
+- **Notifications**: In-app notifications (assignment, status, due-soon, comment mentions)
 - **Admin panel**: User, team, role, LDAP, and log management
 - **Dashboard**: Real-time statistics with charts and leaderboards
 - **Logging**: System logs (backend/frontend) and task operation audit logs
-- **Security**: Rate limiting, account lockout, AES-256 encryption, BCrypt passwords
+- **Security**: Rate limiting, account lockout, AES-256-GCM encryption, BCrypt passwords, token revocation, HTTP security headers
 
 ## Default Credentials
 

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- SLA tracking: configurable resolution-time policies + per-task SLA state. -->
+
+    <changeSet id="create_sla_policies" author="system">
+        <createTable tableName="sla_policies">
+            <column name="id" type="BIGSERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <!-- Optional scoping: NULL = applies to any priority / any team -->
+            <column name="priority" type="VARCHAR(20)"/>
+            <column name="team_id" type="BIGINT">
+                <constraints foreignKeyName="fk_sla_policies_team" references="teams(id)"/>
+            </column>
+            <column name="target_hours" type="INT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="business_hours_only" type="BOOLEAN" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="is_active" type="BOOLEAN" defaultValueBoolean="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="NOW()">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex indexName="idx_sla_policies_active" tableName="sla_policies">
+            <column name="is_active"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="add_sla_columns_to_tasks" author="system">
+        <addColumn tableName="tasks">
+            <column name="sla_due_at" type="TIMESTAMP"/>
+            <column name="sla_status" type="VARCHAR(20)"/>
+            <column name="completed_at" type="TIMESTAMP"/>
+        </addColumn>
+        <createIndex indexName="idx_tasks_sla_status" tableName="tasks">
+            <column name="sla_status"/>
+        </createIndex>
+    </changeSet>
+
+    <!-- Sensible global defaults so SLA works out of the box (priority-based). -->
+    <changeSet id="seed_default_sla_policies" author="system">
+        <insert tableName="sla_policies">
+            <column name="name" value="Acil işler (varsayılan)"/>
+            <column name="priority" value="URGENT"/>
+            <column name="target_hours" valueNumeric="4"/>
+            <column name="business_hours_only" valueBoolean="false"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="sla_policies">
+            <column name="name" value="Yüksek öncelik (varsayılan)"/>
+            <column name="priority" value="HIGH"/>
+            <column name="target_hours" valueNumeric="24"/>
+            <column name="business_hours_only" valueBoolean="false"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+        <insert tableName="sla_policies">
+            <column name="name" value="Normal öncelik (varsayılan)"/>
+            <column name="priority" value="NORMAL"/>
+            <column name="target_hours" valueNumeric="72"/>
+            <column name="business_hours_only" valueBoolean="false"/>
+            <column name="is_active" valueBoolean="true"/>
+        </insert>
+    </changeSet>
+
+</databaseChangeLog>

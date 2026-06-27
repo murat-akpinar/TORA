@@ -10,61 +10,33 @@ This document outlines planned features, improvements, and known issues. Use thi
 
 The following features are already implemented and available:
 
-- **Admin Panel**: Full user CRUD, team CRUD, role management, LDAP settings UI, LDAP user import
+- **Admin Panel**: Full user CRUD, team CRUD, role management, LDAP settings UI, LDAP user import, admin audit log
 - **Team Management**: Leader assignment, member management, custom colors and icons
 - **Task Audit Logging**: TaskLog system tracking all CRUD operations with old/new values
-- **Kanban Board**: Status-based Kanban board view per team
-- **Gantt Chart**: Timeline-based Gantt chart with subtask hierarchy
-- **Task Types & Priorities**: TASK/FEATURE/BUG types, NORMAL/HIGH/URGENT priorities
+- **Views**: Calendar, Week, 12-month overview, Kanban, Gantt (subtask hierarchy), and paginated List view
+- **Task Types & Priorities**: TASK/FEATURE/BUG/… types, NORMAL/HIGH/URGENT priorities
+- **Flexible Labels**: Team-scoped `task_labels` (replaced the old fixed task types in the UI)
 - **Subtask Support**: Child tasks with assignee, dates, and completion tracking
-- **Postponement Tracking**: Postponed date tracking with original date preservation
-- **Overdue Detection**: Scheduled job to automatically detect overdue tasks
-- **Rate Limiting**: IP-based rate limiting with Bucket4j
-- **Account Lockout**: Failed login attempt tracking and lockout
-- **Hybrid Auth**: LDAP + Local user authentication with JWT
-- **System Logs**: Backend and frontend log collection and viewing
-- **System Health**: Backend, database, and frontend health monitoring
+- **Notifications**: In-app notifications (assignment, status change, due-soon cron, comment mentions) with header bell + polling
+- **Task Comments**: Comment threads with `@mention` autocomplete and mention notifications
+- **Global Search & Saved Filters**: PostgreSQL full-text/trigram search across tasks/projects/users + per-user saved filters
+- **Reports & Analytics**: Performance, productivity, unit-comparison, process-duration reports with Excel (`.xlsx`) export
+- **Hybrid Auth**: LDAP + Local user authentication with JWT access + rotating refresh tokens, token revocation on logout
+- **Security Hardening**: AES-256-GCM secret encryption (PBKDF2), startup secret validation, HTTP security headers, login history
+- **Rate Limiting & Account Lockout**: DB-backed `LoginAttemptService` (IP + account), failed-attempt tracking
+- **System Logs & Health**: Backend/frontend log collection and viewing, system health monitoring, scheduled log cleanup
+- **Performance**: Caffeine caching (dashboard, user details), N+1 fixes (`@BatchSize` + fetch joins), SQL aggregation, search/start-date indexes, lazy-loaded routes
+- **Theme**: Dark/Light toggle (Catppuccin Mocha/Latte) persisted per browser
 - **Docker**: Full containerized deployment with Docker Compose
-- **Liquibase**: Versioned database migrations (V1–V17)
+- **Liquibase**: Versioned database migrations (V1–V27)
 
 ---
 
 ## Short Term (High Priority)
 
-### 1. Notification System
-**Goal**: Real-time notifications for task assignments and status changes.
+> Notifications, Task Comments, Reporting/Analytics, Global Search + Saved Filters, and the Dark/Light theme have been **completed** — see the Completed Features list above and `todo/todo.md` for details.
 
-- [ ] Create `notifications` table (user_id, type, message, is_read, related_entity_id, created_at)
-- [ ] Create NotificationService to generate notifications on:
-  - Task assigned to user
-  - Task status changed
-  - Task deadline approaching (1 day before)
-  - User mentioned in task content
-- [ ] Create NotificationController with endpoints:
-  - `GET /api/notifications` — list user's notifications
-  - `PUT /api/notifications/{id}/read` — mark as read
-  - `PUT /api/notifications/read-all` — mark all as read
-  - `GET /api/notifications/unread-count` — unread count
-- [ ] Frontend: notification bell icon in Header with unread badge
-- [ ] Frontend: notification dropdown/panel
-- [ ] Optional: WebSocket (STOMP) for real-time push
-- [ ] Optional: email notification preferences per user
-
-### 2. Task Comments
-**Goal**: Allow users to discuss tasks with threaded comments.
-
-- [ ] Create `task_comments` table (id, task_id, user_id, content, parent_comment_id, created_at, updated_at)
-- [ ] Create TaskCommentService and TaskCommentController
-- [ ] Endpoints:
-  - `GET /api/tasks/{id}/comments` — list comments for a task
-  - `POST /api/tasks/{id}/comments` — add a comment
-  - `PUT /api/tasks/{id}/comments/{commentId}` — edit own comment
-  - `DELETE /api/tasks/{id}/comments/{commentId}` — delete own comment
-- [ ] Frontend: comment section in TaskModal
-- [ ] Support @mentions with user autocomplete
-- [ ] Trigger notifications on new comments
-
-### 3. File Attachments
+### 1. File Attachments
 **Goal**: Allow file uploads on tasks.
 
 - [ ] Create `task_attachments` table (id, task_id, filename, file_path, file_size, content_type, uploaded_by, created_at)
@@ -77,7 +49,7 @@ The following features are already implemented and available:
 - [ ] Frontend: file upload area in TaskModal
 - [ ] File size limits and allowed types configuration
 
-### 4. Task Templates
+### 2. Task Templates
 **Goal**: Predefined task templates for common workflows.
 
 - [ ] Create `task_templates` table (id, name, title_template, content_template, task_type, priority, team_id, subtask_templates JSON, created_by, created_at)
@@ -85,7 +57,7 @@ The following features are already implemented and available:
 - [ ] Frontend: "Create from template" option in task creation
 - [ ] Team-specific and global templates
 
-### 5. Recurring Tasks
+### 3. Recurring Tasks
 **Goal**: Automatically create tasks on a schedule.
 
 - [ ] Create `recurring_task_rules` table (id, template fields, recurrence_type, recurrence_interval, next_run_date, is_active)
@@ -93,7 +65,7 @@ The following features are already implemented and available:
 - [ ] Recurrence types: DAILY, WEEKLY, BIWEEKLY, MONTHLY
 - [ ] Frontend: recurrence settings in task creation modal
 
-### 6. Bulk CSV User Import
+### 4. Bulk CSV User Import
 **Goal**: Import multiple users at once from a CSV file.
 
 - [ ] CSV upload endpoint with validation
@@ -104,21 +76,9 @@ The following features are already implemented and available:
 
 ## Medium Term
 
-### 7. Reporting & Analytics
-**Goal**: Comprehensive reporting with export capabilities.
+> **Done:** Reporting & Analytics (performance/productivity/unit-comparison/process-duration + Excel export, `GET /api/reports/*`) and Global Search + Saved Filters are implemented — see Completed Features. PDF export remains a possible future addition.
 
-- [ ] Weekly/monthly performance reports per team
-- [ ] Cross-team comparison charts
-- [ ] Individual productivity metrics (tasks completed, avg completion time)
-- [ ] Process duration analysis (open → completed time)
-- [ ] Team-level reporting
-- [ ] Export to PDF and Excel
-- [ ] Endpoints:
-  - `GET /api/reports/team/{id}` — team report
-  - `GET /api/reports/user/{id}` — user report
-  - `GET /api/reports/export` — export with format parameter
-
-### 8. Advanced Calendar Features
+### 5. Advanced Calendar Features
 **Goal**: Enhanced calendar functionality.
 
 - [ ] Drag-and-drop task rescheduling on calendar
@@ -127,7 +87,7 @@ The following features are already implemented and available:
 - [ ] Google Calendar / Outlook integration (iCal export)
 - [ ] Print-friendly calendar view
 
-### 9. Sprint / Milestone Support
+### 6. Sprint / Milestone Support
 **Goal**: Agile project management capabilities.
 
 - [ ] Create `milestones` table (id, project_id, name, target_date, status)
@@ -137,21 +97,11 @@ The following features are already implemented and available:
 - [ ] Burndown chart
 - [ ] Project progress percentage widget
 
-### 10. Global Search
-**Goal**: Search across all entities.
-
-- [ ] `GET /api/search?q=term` — search tasks, projects, users
-- [ ] Full-text search with PostgreSQL `tsvector`/`tsquery`
-- [ ] Frontend: search bar in Header with instant results
-- [ ] Search result grouping by entity type
-- [ ] Advanced filters (date range, priority, status combinations)
-- [ ] Saved searches / filters
-
 ---
 
 ## Long Term
 
-### 11. Mobile Application
+### 7. Mobile Application
 **Goal**: Native mobile experience.
 
 - [ ] React Native or Flutter mobile app
@@ -159,7 +109,7 @@ The following features are already implemented and available:
 - [ ] Offline mode with sync
 - [ ] Camera integration for file attachments
 
-### 12. Integrations & Automation
+### 8. Integrations & Automation
 **Goal**: Connect with external tools.
 
 - [ ] Webhook system for external integrations
@@ -168,7 +118,7 @@ The following features are already implemented and available:
 - [ ] Automatic task assignment rules (round-robin, skill-based)
 - [ ] SLA tracking with configurable thresholds
 
-### 13. Enhanced Security
+### 9. Enhanced Security
 **Goal**: Enterprise-grade security.
 
 - [ ] Two-factor authentication (2FA) — TOTP
@@ -177,7 +127,7 @@ The following features are already implemented and available:
 - [ ] API key authentication for external integrations
 - [ ] IP whitelist for admin panel
 
-### 14. AI Features
+### 10. AI Features
 **Goal**: Intelligent assistance.
 
 - [ ] Task priority suggestion based on historical data
@@ -186,7 +136,7 @@ The following features are already implemented and available:
 - [ ] Duplicate task detection
 - [ ] Natural language task creation
 
-### 15. Internationalization (i18n)
+### 11. Internationalization (i18n)
 **Goal**: Multi-language support.
 
 - [ ] Extract all UI strings to translation files
@@ -194,12 +144,12 @@ The following features are already implemented and available:
 - [ ] Language preference per user
 - [ ] Date/time format localization
 
-### 16. Theme Support
+### 12. Theme Support (partially done)
 **Goal**: User-customizable appearance.
 
-- [ ] Dark/Light theme toggle
-- [ ] Theme preference stored per user
-- [ ] Additional Catppuccin flavors (Latte, Frappe, Macchiato)
+- [x] Dark/Light theme toggle (Catppuccin Mocha/Latte, persisted in `localStorage`)
+- [ ] Theme preference stored server-side per user
+- [ ] Additional Catppuccin flavors (Frappe, Macchiato)
 
 ---
 
@@ -211,18 +161,19 @@ The following features are already implemented and available:
 - [ ] Add E2E tests (Cypress or Playwright)
 
 ### UX Improvements
-- [ ] More user-friendly error messages
-- [ ] Consistent loading states across all views
-- [ ] Stronger form validation with inline feedback
-- [ ] Improved responsive design for tablets and mobile
-- [ ] Accessibility (WCAG) compliance
-- [ ] Keyboard shortcuts for common actions
+- [x] Consistent loading states (`LoadingSpinner`) and inline form validation (`formValidation.ts`)
+- [x] Responsive design for tablets and mobile (900px breakpoint)
+- [x] Accessibility (WCAG 2.1 AA) pass — skip link, focus rings, ARIA roles
+- [x] Keyboard shortcuts for common actions (`?` help, `g h/p/d/a/u` navigation)
+- [x] Dedicated error pages (403 / 500 / network) + ErrorBoundary
+- [ ] More user-friendly error messages (ongoing)
 
 ### Performance
-- [ ] Implement pagination on task list views
-- [ ] Add caching layer (Redis) for dashboard statistics
-- [ ] Optimize database queries with proper indexing review
-- [ ] Lazy loading for heavy components (Gantt chart)
+- [x] Pagination on task list views (20/page)
+- [x] Caffeine in-memory caching (dashboard stats + user details)
+- [x] Database index review (V23/V25/V26) and N+1 query fixes
+- [x] Route-level lazy loading + Vite chunk splitting
+- [ ] Add a Redis caching/shared layer (also enables persistent token blacklist/refresh store)
 - [ ] Image/asset optimization
 
 ### DevOps

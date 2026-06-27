@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="31-1-create-task-chains" author="tora">
+        <createTable tableName="task_chains">
+            <column name="id" type="BIGINT" autoIncrement="true">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="source_task_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="title" type="VARCHAR(255)"><constraints nullable="false"/></column>
+            <column name="content" type="TEXT"/>
+            <column name="target_team_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="target_project_id" type="BIGINT"/>
+            <column name="priority" type="VARCHAR(20)"/>
+            <column name="duration_days" type="INT"><constraints nullable="false"/></column>
+            <column name="triggered_at" type="TIMESTAMP"/>
+            <column name="created_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+            <column name="updated_at" type="TIMESTAMP"><constraints nullable="false"/></column>
+        </createTable>
+        <addForeignKeyConstraint baseTableName="task_chains" baseColumnNames="source_task_id"
+            constraintName="fk_task_chains_source" referencedTableName="tasks"
+            referencedColumnNames="id" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="task_chains" baseColumnNames="target_team_id"
+            constraintName="fk_task_chains_team" referencedTableName="teams"
+            referencedColumnNames="id"/>
+        <addForeignKeyConstraint baseTableName="task_chains" baseColumnNames="target_project_id"
+            constraintName="fk_task_chains_project" referencedTableName="projects"
+            referencedColumnNames="id" onDelete="SET NULL"/>
+        <createIndex tableName="task_chains" indexName="idx_task_chains_source">
+            <column name="source_task_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="31-2-create-task-chain-assignees" author="tora">
+        <createTable tableName="task_chain_assignees">
+            <column name="chain_id" type="BIGINT"><constraints nullable="false"/></column>
+            <column name="user_id" type="BIGINT"><constraints nullable="false"/></column>
+        </createTable>
+        <addPrimaryKey tableName="task_chain_assignees" columnNames="chain_id, user_id"
+            constraintName="pk_task_chain_assignees"/>
+        <addForeignKeyConstraint baseTableName="task_chain_assignees" baseColumnNames="chain_id"
+            constraintName="fk_tca_chain" referencedTableName="task_chains"
+            referencedColumnNames="id" onDelete="CASCADE"/>
+        <addForeignKeyConstraint baseTableName="task_chain_assignees" baseColumnNames="user_id"
+            constraintName="fk_tca_user" referencedTableName="users"
+            referencedColumnNames="id" onDelete="CASCADE"/>
+    </changeSet>
+
+    <changeSet id="31-3-add-spawned-from-to-tasks" author="tora">
+        <addColumn tableName="tasks">
+            <column name="spawned_from_task_id" type="BIGINT"/>
+        </addColumn>
+        <addForeignKeyConstraint baseTableName="tasks" baseColumnNames="spawned_from_task_id"
+            constraintName="fk_tasks_spawned_from" referencedTableName="tasks"
+            referencedColumnNames="id" onDelete="SET NULL"/>
+        <createIndex tableName="tasks" indexName="idx_tasks_spawned_from">
+            <column name="spawned_from_task_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

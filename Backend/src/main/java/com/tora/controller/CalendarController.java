@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.CalendarViewDTO;
 import com.tora.dto.TaskDTO;
 import com.tora.service.TaskService;
@@ -13,6 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/calendar")
+@Tag(name = "Takvim", description = "Takvim görünümü ve görev tarih sorguları")
 public class CalendarController {
     
     @Autowired

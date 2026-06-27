@@ -63,6 +63,9 @@ const STATUS_BG: Record<string, string> = {
   'Test': '#e2d9f3', 'Açık': '#fff3cd', 'İptal': '#f8d7da',
 };
 const PRIORITY_BG: Record<string, string> = { 'Acil': '#f8d7da', 'Yüksek': '#fff3cd' };
+const SLA_BG: Record<string, string> = {
+  'Zamanında': '#d4edda', 'Riskli': '#fff3cd', 'Aşıldı': '#f8d7da', 'Karşılandı': '#cce5ff',
+};
 
 function renderPerformanceTable(data: PerformancePeriod[], period?: string): string {
   const totCreated   = data.reduce((s, d) => s + d.created,    0);
@@ -268,6 +271,8 @@ function renderTaskSection(tasks: TaskListReportItem[]): string {
     const stCell = task.subtaskTotal > 0 ? `${task.subtaskCompleted}/${task.subtaskTotal}` : '-';
     const priBg  = PRIORITY_BG[task.priority] ?? 'transparent';
     const stsBg  = STATUS_BG[task.status]     ?? 'transparent';
+    const slaLbl = task.slaStatus ?? '-';
+    const slaBg  = SLA_BG[slaLbl] ?? 'transparent';
 
     const taskRow = `
       <tr>
@@ -281,6 +286,7 @@ function renderTaskSection(tasks: TaskListReportItem[]): string {
         <td>${task.endDate ?? '-'}</td>
         <td class="assignees">${esc(task.assignees || '-')}</td>
         <td>${stCell}</td>
+        <td style="background:${slaBg}">${esc(slaLbl)}</td>
       </tr>`;
 
     const subtaskRows = task.subtasks.map(st => {
@@ -294,6 +300,7 @@ function renderTaskSection(tasks: TaskListReportItem[]): string {
         <td>${st.startDate ?? '-'}</td>
         <td>${st.endDate ?? '-'}</td>
         <td>${esc(st.assignee ?? '-')}</td>
+        <td></td>
         <td></td>
       </tr>`;
     }).join('');
@@ -309,7 +316,7 @@ function renderTaskSection(tasks: TaskListReportItem[]): string {
         <tr>
           <th>#</th><th>Başlık</th><th>Birim</th><th>Proje</th>
           <th>Öncelik</th><th>Durum</th><th>Başlangıç</th><th>Bitiş</th>
-          <th>Atananlar</th><th>Alt İşler</th>
+          <th>Atananlar</th><th>Alt İşler</th><th>SLA</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>

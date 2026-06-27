@@ -3,6 +3,7 @@ package com.tora.config;
 import com.tora.model.*;
 import com.tora.model.enums.*;
 import com.tora.repository.*;
+import com.tora.service.SlaService;
 import com.tora.service.TaskLabelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,9 @@ public class SampleDataInitializer implements CommandLineRunner {
     @Autowired
     private TaskLabelService taskLabelService;
 
+    @Autowired
+    private SlaService slaService;
+
     private final Random random = new Random();
 
     @Override
@@ -53,6 +57,14 @@ public class SampleDataInitializer implements CommandLineRunner {
     public void run(String... args) {
         if (!"1".equals(seedSampleData)) {
             System.out.println("Sample data seeding is disabled. Set app.seed.sample-data=1 to enable.");
+            return;
+        }
+
+        // Idempotency: önceden seed edildiyse (görev varsa) tekrar üretme.
+        // Aksi halde her restart'ta SEED=1 iken yeni görev partisi eklenir ve DB şişer.
+        if (taskRepository.count() > 0) {
+            System.out.println("Sample data already present (" + taskRepository.count()
+                    + " tasks). Skipping seeding.");
             return;
         }
 
@@ -392,8 +404,19 @@ public class SampleDataInitializer implements CommandLineRunner {
                     task.setProject(selectedProject);
                 }
 
+                // Tamamlanmış işlere gerçekçi bir tamamlanma zamanı ver — SLA için
+                // MET/BREACHED çeşitliliği oluşsun (önceliğe göre 4/24/72 saatlik hedefler).
+                if (selectedStatus == TaskStatus.COMPLETED) {
+                    int hoursToComplete = 1 + random.nextInt(120); // 1-120 saat
+                    task.setCompletedAt(createdAt.plusHours(hoursToComplete));
+                }
+
                 // Assign user to task
                 task.setAssignees(Collections.singleton(taskAssignee));
+
+                // SLA alanlarını (sla_due_at / sla_status) hesapla
+                slaService.recalculate(task);
+
                 Task savedTask = taskRepository.save(task);
 
                 // 30% chance to create subtasks

@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.LdapSearchRequest;
 import com.tora.dto.LdapUserDTO;
 import com.tora.model.User;
@@ -19,6 +21,7 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/admin/ldap")
 @PreAuthorize("hasAnyRole('ADMIN')")
+@Tag(name = "LDAP İçe Aktarma", description = "LDAP kullanıcı arama ve import (admin)")
 public class LdapImportController {
 
     @Autowired

@@ -109,6 +109,39 @@ public class NotificationService {
     }
 
     @Transactional
+    public void notifySlaAtRisk(Task task) {
+        for (User recipient : slaRecipients(task)) {
+            saveDeduped(recipient, NotificationType.SLA_AT_RISK, task, null, null,
+                    "SLA süresi yaklaşıyor",
+                    "\"" + task.getTitle() + "\" işinin SLA süresi dolmak üzere.");
+        }
+    }
+
+    @Transactional
+    public void notifySlaBreached(Task task) {
+        for (User recipient : slaRecipients(task)) {
+            saveDeduped(recipient, NotificationType.SLA_BREACHED, task, null, null,
+                    "SLA süresi aşıldı",
+                    "\"" + task.getTitle() + "\" işi SLA süresini aştı.");
+        }
+    }
+
+    /** SLA recipients: assignees + the team leader (birim amiri). */
+    private List<User> slaRecipients(Task task) {
+        List<User> recipients = new ArrayList<>();
+        if (task.getAssignees() != null) {
+            recipients.addAll(task.getAssignees());
+        }
+        if (task.getTeam() != null && task.getTeam().getLeader() != null) {
+            User leader = task.getTeam().getLeader();
+            if (recipients.stream().noneMatch(u -> u.getId().equals(leader.getId()))) {
+                recipients.add(leader);
+            }
+        }
+        return recipients;
+    }
+
+    @Transactional
     public void notifyDueSoon(Task task) {
         for (User assignee : task.getAssignees()) {
             saveDeduped(assignee, NotificationType.TASK_DUE_SOON, task, null, null,

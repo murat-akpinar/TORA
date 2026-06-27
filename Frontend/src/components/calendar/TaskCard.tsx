@@ -1,9 +1,16 @@
 import React from 'react';
-import { Task } from '../../types/Task';
+import { Task, SlaStatus } from '../../types/Task';
 import { getStatusColor, getStatusLabel } from '../../utils/statusColors';
 import { formatDate } from '../../utils/dateUtils';
 import { getDay, parseISO } from 'date-fns';
 import './TaskCard.css';
+
+const SLA_META: Record<SlaStatus, { label: string; cls: string }> = {
+  [SlaStatus.ON_TRACK]: { label: 'SLA: zamanında', cls: 'sla-ontrack' },
+  [SlaStatus.AT_RISK]: { label: 'SLA: riskli', cls: 'sla-atrisk' },
+  [SlaStatus.BREACHED]: { label: 'SLA: aşıldı', cls: 'sla-breached' },
+  [SlaStatus.MET]: { label: 'SLA ✓', cls: 'sla-met' },
+};
 
 interface TaskCardProps {
   task: Task;
@@ -99,6 +106,11 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onClick }) => {
           {formatDate(task.startDate)} - {formatDate(task.endDate)}
         </div>
       </div>
+      {task.slaStatus && SLA_META[task.slaStatus] && (
+        <div className={`sla-chip ${SLA_META[task.slaStatus].cls}`}>
+          {SLA_META[task.slaStatus].label}
+        </div>
+      )}
       {task.assigneeNames && task.assigneeNames.length > 0 && (
         <div className="task-assignees">
           Atanan: {task.assigneeNames.join(', ')}

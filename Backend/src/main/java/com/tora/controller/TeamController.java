@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.TeamDTO;
 import com.tora.service.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +12,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/teams")
+@Tag(name = "Birimler (Teams)", description = "Birim yönetimi, üyeler, renk/ikon")
 public class TeamController {
     
     @Autowired

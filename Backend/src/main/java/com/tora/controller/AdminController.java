@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.*;
 import com.tora.model.RoleEntity;
 import com.tora.service.AdminService;
@@ -17,6 +19,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin")
 @PreAuthorize("hasAnyRole('ADMIN')")
+@Tag(name = "Admin — Kullanıcı & Yetki", description = "Kullanıcı yönetimi, rol/yetki ataması, audit log")
 public class AdminController {
 
     @Autowired

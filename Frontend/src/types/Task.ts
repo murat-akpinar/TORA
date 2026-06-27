@@ -19,6 +19,13 @@ export enum Priority {
   URGENT = 'URGENT',  // Acil
 }
 
+export enum SlaStatus {
+  ON_TRACK = 'ON_TRACK',
+  AT_RISK = 'AT_RISK',
+  BREACHED = 'BREACHED',
+  MET = 'MET',
+}
+
 export interface Subtask {
   id: number;
   title: string;
@@ -28,6 +35,20 @@ export interface Subtask {
   assigneeId?: number;
   assigneeName?: string;
   isCompleted: boolean;
+}
+
+// Tamamlanınca otomatik açılacak takip görevi (zincir)
+export interface TaskChain {
+  id?: number;
+  title: string;
+  content?: string;
+  targetTeamId: number;
+  targetTeamName?: string;
+  targetProjectId?: number;
+  priority?: Priority;
+  durationDays: number;
+  assigneeIds?: number[];
+  triggeredAt?: string;
 }
 
 export interface Task {
@@ -51,6 +72,11 @@ export interface Task {
   assigneeIds: number[];
   assigneeNames: string[];
   subtasks: Subtask[];
+  slaStatus?: SlaStatus;
+  slaDueAt?: string;
+  chains?: TaskChain[];
+  spawnedFromTaskId?: number;
+  spawnedFromTitle?: string;
 }
 
 export interface CreateTaskRequest {
@@ -66,6 +92,7 @@ export interface CreateTaskRequest {
   labelIds?: number[];
   newLabelNames?: string[];
   subtasks?: CreateSubtaskRequest[];
+  chains?: TaskChain[];
 }
 
 export interface CreateSubtaskRequest {

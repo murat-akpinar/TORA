@@ -72,4 +72,5 @@ export interface TaskListReportItem {
   subtaskTotal: number;
   subtaskCompleted: number;
   subtasks: SubtaskReportItem[];
+  slaStatus?: string | null;
 }

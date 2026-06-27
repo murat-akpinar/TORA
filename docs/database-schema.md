@@ -99,17 +99,23 @@ Core task/work item records.
 | `team_id` | BIGINT | NO | — | FK → `teams.id` |
 | `project_id` | BIGINT | YES | NULL | FK → `projects.id` |
 | `created_by` | BIGINT | NO | — | FK → `users.id` |
-| `postponed_to_date` | DATE | YES | NULL | New date after postponement |
-| `postponed_from_date` | DATE | YES | NULL | Original date before postponement |
-| `is_postponed` | BOOLEAN | NO | false | Whether task has been postponed |
+| `postponed_to_date` | DATE | YES | NULL | New date after postponement (legacy) |
+| `postponed_from_date` | DATE | YES | NULL | Original date before postponement (legacy) |
+| `is_postponed` | BOOLEAN | NO | false | Whether task has been postponed (legacy flag) |
 | `created_at` | TIMESTAMP | NO | now() | Creation timestamp |
 | `updated_at` | TIMESTAMP | NO | now() | Last update timestamp |
 
-**Status values**: `OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `POSTPONED`, `CANCELLED`, `OVERDUE`
+**SLA columns (V30)**: `sla_due_at` (TIMESTAMP, nullable — computed resolution deadline), `sla_status` (VARCHAR(20): `ON_TRACK`/`AT_RISK`/`BREACHED`/`MET`, indexed), `completed_at` (TIMESTAMP, set when status → COMPLETED).
 
-**Task type values**: `TASK`, `FEATURE`, `BUG`, `IMPROVEMENT`, `RESEARCH`, `DOCUMENTATION`, `TEST`, `MAINTENANCE`, `MEETING`
+**Status values** (`TaskStatus` enum): `OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `CANCELLED`
 
-**Priority values**: `NORMAL`, `HIGH`, `URGENT`
+> The `POSTPONED` and `OVERDUE` statuses were retired in migration **V18** (existing rows migrated to `IN_PROGRESS`). The `postponed_*` / `is_postponed` columns remain for historical data but are no longer set by new status transitions.
+
+**Task type values** (`TaskType` enum): `TASK`, `FEATURE`, `BUG`, `IMPROVEMENT`, `RESEARCH`, `DOCUMENTATION`, `TEST`, `MAINTENANCE`, `MEETING`
+
+> `task_type` is retained on the row, but the flexible `task_labels` system (V22) is the primary categorization mechanism in the UI.
+
+**Priority values** (`Priority` enum): `NORMAL`, `HIGH`, `URGENT`
 
 ---
 
@@ -145,6 +151,7 @@ Project containers that group tasks across teams.
 | `end_date` | DATE | YES | NULL | Project deadline |
 | `status` | VARCHAR(20) | NO | `ACTIVE` | Project status (enum) |
 | `created_by` | BIGINT | NO | — | FK → `users.id` |
+| `manager_id` | BIGINT | YES | NULL | FK → `users.id` (project manager, V24) |
 | `created_at` | TIMESTAMP | NO | now() | Creation timestamp |
 | `updated_at` | TIMESTAMP | NO | now() | Last update timestamp |
 
@@ -284,6 +291,14 @@ Tracks login attempts for rate limiting and account lockout.
 
 PK: `(comment_id, user_id)`. Index: `user_id`.
 
+### `task_chain_assignees`
+| Column | Type | Description |
+|--------|------|-------------|
+| `chain_id` | BIGINT | FK → `task_chains.id`, ON DELETE CASCADE |
+| `user_id` | BIGINT | FK → `users.id`, ON DELETE CASCADE |
+
+PK: `(chain_id, user_id)`. Üretilen takip görevine atanacak (hedef birim) kullanıcılar.
+
 ---
 
 ## `notifications`
@@ -360,6 +375,80 @@ ilgili kullanıcılara bağlanır.
 
 ---
 
+## `saved_filters`
+
+Kullanıcı başına kaydedilmiş arama/filtre tanımları (V27).
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `user_id` | BIGINT | NO | — | FK → `users.id` (sahip) |
+| `name` | VARCHAR(100) | NO | — | Filtre adı |
+| `filter_json` | TEXT | NO | — | Serileştirilmiş filtre tanımı (durum/öncelik/etiket/atanan) |
+| `created_at` | TIMESTAMP | NO | now() | Oluşturma zamanı |
+
+**Indexes**: `user_id`
+
+Kullanıcı başına maks. 20 filtre saklanır; silme işlemi sahiplik kontrolüne tabidir.
+
+---
+
+## `revoked_tokens`
+
+Logout'ta iptal edilen (blacklist) JWT access token'ları (V28). Sadece SHA-256 hash saklanır.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `token_hash` | VARCHAR(64) | NO | — | Token'ın SHA-256 hash'i (unique) |
+| `expires_at` | TIMESTAMP | NO | — | Token'ın doğal son kullanma zamanı |
+| `created_at` | TIMESTAMP | NO | now() | İptal zamanı |
+
+**Indexes**: `token_hash` (unique), `expires_at`
+
+`TokenBlacklistService` her istekte `token_hash` ile kontrol eder; süresi geçen kayıtlar saatlik `@Scheduled` job ile silinir.
+
+---
+
+## `refresh_tokens`
+
+Kalıcı refresh token'ları (V28). Sadece SHA-256 hash saklanır, rotate-on-use.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `token_hash` | VARCHAR(64) | NO | — | Token'ın SHA-256 hash'i (unique) |
+| `username` | VARCHAR(100) | NO | — | Token'ın bağlı olduğu kullanıcı |
+| `ip_address` | VARCHAR(45) | YES | NULL | Oturumun açıldığı IP (V29) |
+| `user_agent` | VARCHAR(512) | YES | NULL | Oturum cihazı/tarayıcısı (V29) |
+| `expires_at` | TIMESTAMP | NO | — | 7 gün sonrası |
+| `created_at` | TIMESTAMP | NO | now() | Oluşturma zamanı |
+
+**Indexes**: `token_hash` (unique), `expires_at`
+
+`/api/auth/refresh` kullanımında eski satır silinip yenisi oluşturulur; süresi geçenler saatlik `@Scheduled` job ile temizlenir. Her satır aynı zamanda bir **oturum**'u temsil eder (Session Yönetimi: `GET/DELETE /api/users/me/sessions`, IP + cihaz + tarih ile listelenir).
+
+---
+
+## `sla_policies`
+
+SLA çözüm-süresi politikaları (V30). Bir görev, opsiyonel **öncelik** ve/veya **birim** ile eşleşen en spesifik aktif politikaya bağlanır.
+
+| Column | Type | Nullable | Default | Description |
+|--------|------|----------|---------|-------------|
+| `id` | BIGSERIAL | NO | auto | Primary key |
+| `name` | VARCHAR(100) | NO | — | Politika adı |
+| `priority` | VARCHAR(20) | YES | NULL | Eşleşeceği öncelik (NULL = tümü) |
+| `team_id` | BIGINT | YES | NULL | FK → `teams.id` (NULL = tüm birimler) |
+| `target_hours` | INT | NO | — | Hedef çözüm süresi (saat) |
+| `business_hours_only` | BOOLEAN | NO | false | `true` ise hafta sonları sayılmaz |
+| `is_active` | BOOLEAN | NO | true | Politika aktif mi |
+| `created_at` / `updated_at` | TIMESTAMP | NO | now() | Zaman damgaları |
+
+**Indexes**: `is_active`. Seed (V30): URGENT→4s, HIGH→24s, NORMAL→72s (global, 7/24).
+
+---
+
 ## Entity Relationship Diagram
 
 ```
@@ -398,6 +487,31 @@ ilgili kullanıcılara bağlanır.
 
 ---
 
+## `task_chains`
+
+Zincir tanımları: bir kaynak görev **COMPLETED** olunca otomatik açılacak takip görevleri. Bir kaynak görevin **birden çok** tanımı olabilir (1-N).
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `id` | BIGSERIAL | PK |
+| `source_task_id` | BIGINT | FK → `tasks.id`, NOT NULL, ON DELETE CASCADE — tanımın bağlı olduğu kaynak görev |
+| `title` | VARCHAR(255) | NOT NULL — üretilecek takip görevinin başlığı |
+| `content` | TEXT | Opsiyonel açıklama |
+| `target_team_id` | BIGINT | FK → `teams.id`, NOT NULL — hedef birim (aynı veya farklı) |
+| `target_project_id` | BIGINT | FK → `projects.id`, nullable, ON DELETE SET NULL |
+| `priority` | VARCHAR(20) | Opsiyonel; boşsa üretimde `NORMAL` |
+| `duration_days` | INT | NOT NULL (≥0) — `end_date = tamamlanma_günü + duration_days` |
+| `triggered_at` | TIMESTAMP | Bir-kez garantisi; doluysa yeniden üretmez |
+| `created_at` / `updated_at` | TIMESTAMP | NOT NULL |
+
+Index: `idx_task_chains_source (source_task_id)`. Atananlar `task_chain_assignees` join tablosunda.
+
+**`tasks` tablosuna eklenen kolon:** `spawned_from_task_id` BIGINT, FK → `tasks.id`, nullable, **ON DELETE SET NULL** — zincirle üretilen görev kaynağını gösterir; kaynak silinse de üretilmiş görev kalır. Index: `idx_tasks_spawned_from`.
+
+Tetikleme: `updateTaskStatus`/`updateTask` COMPLETED'e geçişte `TaskCompletedEvent` yayınlar; `TaskChainService.onTaskCompleted` **AFTER_COMMIT + REQUIRES_NEW** ile dinler (tamamlamayı bozmaz). Bkz. `docs/architecture.md`.
+
+---
+
 ## Migration History
 
 All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
@@ -425,9 +539,16 @@ All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
 | `V19__create_task_comments.xml` | Create `task_comments` and `task_comment_mentions` tables for görev yorumları |
 | `V20__create_notifications.xml` | Create `notifications` table (user-targeted in-app notifications + indexes) |
 | `V21__remove_admin_from_teams.xml` | Remove `admin` user rows from `user_teams` (yönetici birim üyesi değildir) |
-
 | `V22__add_task_labels.xml` | Create `task_labels` table; migrate existing `task_type` data to labels; add `idx_task_labels_team_id` |
 | `V23__performance_indexes.xml` | Add `idx_task_assignees_user_id`, `idx_tasks_created_by`, `idx_tasks_team_status` (bileşik) |
+| `V24__add_project_manager.xml` | Add nullable `manager_id` (FK → users) column to `projects` |
+| `V25__performance_index_start_date.xml` | Composite indexes `tasks(team_id, start_date)` and `tasks(project_id, start_date)` for year/month range filters |
+| `V26__search_indexes.xml` | GIN full-text search indexes (tasks + projects) and `pg_trgm` trigram index (users) for global search |
+| `V27__saved_filters.xml` | Create `saved_filters` table + `idx_saved_filters_user_id` |
+| `V28__create_token_stores.xml` | Create `revoked_tokens` and `refresh_tokens` tables (persistent JWT blacklist + refresh store, SHA-256 hashed) with expiry indexes |
+| `V29__add_session_info_to_refresh_tokens.xml` | Add `ip_address` + `user_agent` to `refresh_tokens` for the session-management UI |
+| `V30__create_sla.xml` | Create `sla_policies` (+ seed defaults), add `sla_due_at`/`sla_status`/`completed_at` to `tasks` with `idx_tasks_sla_status` |
+| `V31__create_task_chains.xml` | Create `task_chains` + `task_chain_assignees` (zincir görevler); add `spawned_from_task_id` to `tasks` (FK self, ON DELETE SET NULL) with indexes |
 
 ### Adding New Migrations
 

@@ -9,7 +9,9 @@ import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -19,7 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-@ToString(exclude = {"subtasks", "assignees", "statusHistory", "team", "createdBy", "project"})
+@ToString(exclude = {"subtasks", "assignees", "statusHistory", "team", "createdBy", "project", "chains", "spawnedFrom"})
 public class Task {
     
     @Id
@@ -76,6 +78,16 @@ public class Task {
     @BatchSize(size = 50)
     private Set<Subtask> subtasks = new HashSet<>();
 
+    // List (Set değil): henüz id almamış birden çok tanım id-eşitliğiyle çakışmasın → tümü korunur
+    @OneToMany(mappedBy = "source", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
+    private List<TaskChain> chains = new ArrayList<>();
+
+    // Zincirle üretilen görev → kaynağı (geri bağ)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "spawned_from_task_id")
+    private Task spawnedFrom;
+
     @OneToMany(mappedBy = "task", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private Set<TaskStatusHistory> statusHistory = new HashSet<>();
 
@@ -103,9 +115,20 @@ public class Task {
     @Column(name = "is_postponed", nullable = false)
     private Boolean isPostponed = false;
     
+    // SLA tracking (V30)
+    @Column(name = "sla_due_at")
+    private LocalDateTime slaDueAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "sla_status", length = 20)
+    private com.tora.model.enums.SlaStatus slaStatus;
+
+    @Column(name = "completed_at")
+    private LocalDateTime completedAt;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
-    
+
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
     

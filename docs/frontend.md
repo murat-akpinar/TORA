@@ -27,6 +27,7 @@ Frontend/src/
 │   │   ├── TaskLogs           # Task audit log viewer
 │   │   ├── TeamManagement     # Team CRUD
 │   │   ├── TeamModal          # Team create/edit dialog
+│   │   ├── SlaManagement      # SLA policy CRUD + compliance summary
 │   │   ├── UserManagement     # User CRUD
 │   │   └── UserModal          # User create/edit dialog
 │   ├── calendar/         # Calendar & view components
@@ -54,10 +55,11 @@ Frontend/src/
 │   ├── project/          # Project components
 │   │   └── ProjectModal       # Project create/edit dialog
 │   └── task/             # Task components
-│       ├── TaskModal          # Task create/edit dialog with subtasks
+│       ├── TaskModal          # Task create/edit dialog with subtasks + "Tamamlanınca açılacak işler" (zincir) + kaynak rozeti
 │       └── TaskComments       # Yorum listesi + @mention destekli yorum formu
 ├── context/              # React Context providers
-│   └── AuthContext.tsx         # Authentication state management
+│   ├── AuthContext.tsx         # Authentication state management
+│   └── ThemeContext.tsx        # Dark/Light theme toggle (Catppuccin Mocha/Latte, localStorage)
 ├── hooks/                # Custom React hooks
 │   ├── useAuth.ts             # Auth context consumer hook
 │   ├── useSidebar.ts          # Sidebar toggle state (localStorage)
@@ -70,7 +72,9 @@ Frontend/src/
 │   ├── ProjectsPage           # Project list with filters
 │   ├── ProjectDetailPage      # Single project with Gantt & tasks
 │   ├── AdminPanelPage         # Admin panel with tabbed interface
-│   ├── UserProfilePage        # User profile management
+│   ├── UserProfilePage        # User profile (Dashboard/Settings tabs, login history)
+│   ├── ReportsPage            # Reports & analytics (performance, productivity, Excel export)
+│   ├── ErrorPage              # 403 / 500 / network error pages
 │   └── NotFoundPage           # 404 page
 ├── services/             # API service modules
 │   ├── api.ts                 # Axios instance with interceptors
@@ -83,6 +87,11 @@ Frontend/src/
 │   ├── dashboardService.ts    # Dashboard statistics
 │   ├── calendarService.ts     # Calendar data
 │   ├── notificationService.ts # Bildirim CRUD (liste, okundu, sil)
+│   ├── searchService.ts       # Global search (/api/search)
+│   ├── reportService.ts       # Reports & Excel export (/api/reports)
+│   ├── slaService.ts          # SLA policy CRUD + compliance (/api/admin/sla-policies, /api/reports/sla)
+│   ├── taskCommentService.ts  # Görev yorumları CRUD
+│   ├── taskLabelService.ts    # Görev etiketleri arama (/api/task-labels)
 │   ├── logService.ts          # System & task log operations
 │   ├── ldapService.ts         # LDAP import operations
 │   ├── ldapSettingsService.ts # LDAP settings management
@@ -125,8 +134,12 @@ Frontend/src/
 | `/projects` | ProjectsPage | Required | Any | Project list |
 | `/projects/:id` | ProjectDetailPage | Required | Any | Project detail view |
 | `/admin` | AdminPanelPage | Required | ADMIN | Admin panel |
-| `/profile` | UserProfilePage | Required | Any | User profile |
+| `/profile` | UserProfilePage | Required | Any | User profile (Dashboard / Settings tabs, login history, active sessions) |
+| `/reports` | → `/dashboard` | Required | Any | Redirect (reports surfaced within the dashboard) |
+| `/403`, `/500`, `/network-error` | ErrorPage | — | — | Dedicated error pages |
 | `*` | NotFoundPage | — | — | 404 catch-all |
+
+> An `ErrorBoundary` wraps the app and routes uncaught render errors to `ErrorPage`.
 
 Route protection is implemented via wrapper components in `App.tsx` that check `AuthContext`.
 
@@ -150,10 +163,10 @@ All pages except `LoginPage` are loaded with `React.lazy()` + `<Suspense>` for r
 | `hasRole(role)` | `function` | Check if user has a specific role |
 
 **Token management:**
-- JWT stored in `localStorage`
-- Token expiry checked every 5 seconds
-- Auto-logout on expiration
-- Token attached to every API request via Axios interceptor
+- Access token + refresh token stored in `localStorage`
+- Access token attached to every API request via Axios request interceptor
+- A 60s interval in `AuthContext` proactively refreshes ~5 min before expiry (and once on expiry) via `POST /api/auth/refresh` (refresh token is rotated)
+- Auto-logout when the refresh token is also expired/invalid
 
 ### Component-Level State
 
@@ -177,9 +190,14 @@ Request Interceptor:
   → Adds "Authorization: Bearer <token>" header
 
 Response Interceptor:
-  → 401 on /auth/me → auto logout
-  → 403 → redirect or show error
+  → 401 on /auth/me → clear token + redirect to /login
+  → 401 elsewhere → "session expired" toast
+  → 403 → "yetkiniz yok" toast
+  → 5xx / network error → error toast
+  (X-Silent-Error: true header suppresses the toast, e.g. for polling)
 ```
+
+> Token refresh is driven by `AuthContext`, not the interceptor: a 60-second interval proactively refreshes the access token ~5 min before expiry (and once more on expiry) via `authService.refreshAccessToken()` → `POST /api/auth/refresh`.
 
 ### Service Pattern
 
@@ -224,15 +242,18 @@ The application uses the [Catppuccin Mocha](https://github.com/catppuccin/catppu
 | `--ctp-mauve` | #cba6f7 | Feature type accent |
 
 ### Task Status Colors
-| Status | Color Variable | Visual |
-|--------|---------------|--------|
-| OPEN | `--ctp-yellow` | Yellow |
-| IN_PROGRESS | `--ctp-blue` | Blue |
-| TESTING | `--ctp-mauve` | Purple |
-| COMPLETED | `--ctp-green` | Green |
-| POSTPONED | `--ctp-peach` | Peach |
-| CANCELLED | `--ctp-overlay0` | Gray |
-| OVERDUE | `--ctp-red` | Red |
+
+Defined in `utils/statusColors.ts` (`getStatusColor` / `getStatusLabel`):
+
+| Status | Hex | Visual | Label |
+|--------|-----|--------|-------|
+| OPEN | `#f5e0dc` | Rosewater | Açık |
+| IN_PROGRESS | `#89dceb` | Sky | Yapılıyor |
+| TESTING | `#cba6f7` | Mauve | Test Aşamasında |
+| COMPLETED | `#94e2d5` | Teal | Tamamlandı |
+| CANCELLED | `#7f849c` | Overlay1 | İptal Edildi |
+
+> `POSTPONED` / `OVERDUE` were removed from the `TaskStatus` enum (backend V18); the frontend no longer renders them.
 
 ### Priority Icons
 | Priority | Icon | Color |
@@ -278,11 +299,15 @@ The application uses the [Catppuccin Mocha](https://github.com/catppuccin/catppu
 - Quick stats per month (task counts by status)
 - Click a month to navigate to detailed view
 
+### SLA Badge
+Task cards show a colored SLA chip when the task has an SLA: `SLA: zamanında` (ON_TRACK, green), `SLA: riskli` (AT_RISK, peach), `SLA: aşıldı` (BREACHED, red), `SLA ✓` (MET, teal). Admin panel → **SLA** tab manages policies and shows the compliance summary. The Reports task-list table (Excel export and PDF/print) includes a colored **SLA** column (Zamanında/Riskli/Aşıldı/Karşılandı).
+
 ### Task List View (`TaskListView`)
 - Table-based list with columns: title, project, assignee, label, priority, status, dates
 - Client-side pagination: 20 rows/page, page controls + "X–Y / total" counter
 - Page resets automatically on month/week/task filter change
 - Subtask expand/collapse support
+- **Bulk operations**: row checkboxes + select-all; a bulk bar applies status change / assign (add) / delete to the selected tasks via `POST /api/tasks/bulk` (delete shown only to ADMIN/BIRIM_AMIRI), then refreshes the list
 
 ### Notification System
 - `NotificationBell` in header: okunmamış sayısı badge, 30s polling

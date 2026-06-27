@@ -9,6 +9,24 @@ Authorization: Bearer <jwt-token>
 
 ---
 
+## Interactive Docs — Swagger / OpenAPI
+
+An interactive Swagger UI is available **only when the backend runs with the `dev` Spring profile** (`SPRING_PROFILES_ACTIVE=dev`, the docker-compose default). In production (`prod`) springdoc is disabled and no documentation endpoint is exposed.
+
+| Endpoint | Purpose |
+|---|---|
+| `/api/docs` | Swagger UI |
+| `/api/v3/api-docs` | OpenAPI JSON spec |
+
+**Access control (defense in depth):**
+- **Nginx IP allowlist is the real gate** — `Frontend/nginx.conf` (`geo $swagger_denied`) returns `403` for any client outside the allowed ranges. Tighten this list for your environment.
+- Spring Security `permitAll`s the doc paths (the UI fetches the spec on load without a token), but every actual operation stays protected by `Authorize` (JWT) + the controller `@PreAuthorize` rules.
+- The default YAML spec URL is disabled (`disable-swagger-default-url: true`) because the Nginx 8G firewall blocks `.yaml`/`.yml` extensions.
+
+To try endpoints: open `/api/docs`, click **Authorize**, paste a JWT obtained from `/api/auth/login`.
+
+---
+
 ## Authentication (`/api/auth`)
 
 ### POST `/api/auth/login`
@@ -22,22 +40,55 @@ Authenticate a user (LDAP or local).
 }
 ```
 
+**Optional field:** `loginType` (`"ldap"` | `"local"`); omitted = auto (LDAP first, then local).
+
 **Response (200):**
 ```json
 {
   "token": "eyJhbGciOiJIUzI1NiJ9...",
-  "username": "admin",
-  "fullName": "System Administrator",
-  "email": "admin@tora.local",
-  "roles": ["ADMIN"],
-  "teams": [
-    { "id": 1, "name": "Yazılım Birimi" }
-  ]
+  "refreshToken": "b1c2d3e4-...",
+  "type": "Bearer",
+  "user": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@tora.local",
+    "fullName": "System Administrator",
+    "roles": ["ADMIN"],
+    "teamIds": [1]
+  }
 }
 ```
 
-**Error (401):** Invalid credentials
-**Error (429):** Rate limited (too many attempts)
+**Error (401):** Invalid credentials (`code`: `AUTHENTICATION_FAILED` / `USER_NOT_FOUND` / `INVALID_PASSWORD` / `LDAP_AUTHENTICATION_FAILED`)
+**Error (423):** Account locked (`code`: `ACCOUNT_LOCKED`)
+**Error (429):** Rate limited — too many attempts (`code`: `RATE_LIMIT_EXCEEDED`)
+
+---
+
+### POST `/api/auth/refresh`
+Exchange a refresh token for a fresh access token (the old refresh token is rotated/invalidated).
+
+**Request Body:**
+```json
+{ "refreshToken": "b1c2d3e4-..." }
+```
+
+**Response (200):**
+```json
+{ "token": "eyJhbGciOiJIUzI1NiJ9...", "refreshToken": "f5a6b7c8-..." }
+```
+
+**Error (401):** Refresh token expired or invalid
+
+---
+
+### POST `/api/auth/logout`
+Blacklist the current access token and invalidate the supplied refresh token.
+
+**Headers:** `Authorization: Bearer <access-token>`
+**Request Body (optional):** `{ "refreshToken": "b1c2d3e4-..." }`
+
+**Response: 204 No Content.**
 
 ---
 
@@ -60,8 +111,8 @@ Get the current authenticated user's information.
 
 ---
 
-### POST `/api/auth/register`
-Create a local user account.
+### POST `/api/auth/register` 🔒 ADMIN only
+Create a local user account. Requires `ADMIN` role (`@PreAuthorize`).
 
 **Request Body:**
 ```json
@@ -77,11 +128,15 @@ Create a local user account.
 ---
 
 ### GET `/api/auth/users`
-Get all users (basic info).
+Get all users as `SimpleUserDTO` (id, username, fullName only — **no email**, used for task assignment / @mention autocomplete).
 
 ---
 
 ## Tasks (`/api/tasks`)
+
+> **Zincir görevler (chain):** `POST`/`PUT /api/tasks` gövdesinde opsiyonel `chains` dizisi gönderilebilir; her eleman bir takip görevi tanımıdır ve kaynak görev **COMPLETED** olunca otomatik üretilir (farklı birime de). `TaskDTO` yanıtında `chains` (tanımlar) + `spawnedFromTaskId`/`spawnedFromTitle` (zincirle üretildiyse kaynağı) döner.
+>
+> `chains[]` alanları: `title` (zorunlu), `content?`, `targetTeamId` (zorunlu), `targetProjectId?`, `priority?`, `durationDays` (zorunlu, ≥0; `endDate = tamamlanma_günü + durationDays`), `assigneeIds?` (hedef birim kullanıcıları). Tetikleme sadece COMPLETED'e **geçişte**, bir kez (yeniden tamamlamada tekrarlamaz).
 
 ### GET `/api/tasks`
 List tasks with optional filters.
@@ -187,6 +242,28 @@ Update only the status of a task.
   "postponedToDate": null
 }
 ```
+
+---
+
+### POST `/api/tasks/bulk`
+Apply one action to many tasks. Each task is processed with the same per-task permission, logging, notification and SLA logic as the single-task endpoints; failures are collected (partial success).
+
+**Request Body:**
+```json
+{
+  "action": "STATUS",          // STATUS | ASSIGN | DELETE
+  "taskIds": [786, 969, 1553],
+  "status": "COMPLETED",        // STATUS
+  "changeReason": "toplu test", // STATUS (optional)
+  "assigneeId": 1               // ASSIGN (adds the user to assignees)
+}
+```
+
+**Response (200):**
+```json
+{ "succeeded": 3, "failed": 0, "errors": [] }
+```
+`errors` lists `#<taskId>: <reason>` for any task that was skipped (e.g. permission denied). `DELETE` honours the per-task rule (only ADMIN / BIRIM_AMIRI / creator).
 
 ---
 
@@ -475,7 +552,100 @@ Get all tasks for a specific month.
 
 ---
 
+## Search (`/api/search`)
+
+### GET `/api/search?q=<query>`
+Global search across tasks, projects, and users, filtered by the caller's access. Uses PostgreSQL full-text (`tsvector`/GIN) for tasks/projects and trigram (`pg_trgm`) for users.
+
+**Response (200):** `SearchResultDTO` with grouped `tasks`, `projects`, and `users` arrays.
+
+---
+
+## Saved Filters (`/api/saved-filters`)
+
+Per-user saved search/filter definitions (max 20 per user).
+
+### GET `/api/saved-filters`
+List the current user's saved filters.
+
+### POST `/api/saved-filters`
+Create a saved filter.
+
+**Request Body:**
+```json
+{ "name": "Acil & açık", "filterJson": "{\"status\":[\"OPEN\"],\"priority\":[\"URGENT\"]}" }
+```
+
+**Response: 201 Created** with the created `SavedFilterDTO`.
+
+### DELETE `/api/saved-filters/{id}`
+Delete a saved filter (ownership-checked). **Response: 204 No Content.**
+
+---
+
+## Task Labels (`/api/task-labels`)
+
+### GET `/api/task-labels?teamId={id}&search=<term>`
+List/search task labels for a team (`search` optional). Returns `TaskLabelDTO[]`.
+
+---
+
+## Reports (`/api/reports`)
+
+Aggregated reporting endpoints. All accept optional `teamId`, `startDate`, `endDate` (`YYYY-MM-DD`).
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/reports/performance` | Weekly/monthly performance series (`period` = `weekly`/`monthly`) |
+| `GET /api/reports/unit-comparison` | Per-team completed/overdue/total comparison |
+| `GET /api/reports/productivity` | Per-user productivity metrics |
+| `GET /api/reports/process-duration` | Task open→close duration statistics |
+| `GET /api/reports/task-list` | Filtered task list data |
+| `GET /api/reports/export/excel?type=<type>` | Download `.xlsx` export (`type` = `performance`/etc.) |
+| `GET /api/reports/sla?teamId=<id>` | SLA compliance: counts by status + `complianceRate` (met / (met+breached)) |
+
+---
+
 ## User Profile (`/api/users/me`)
+
+### GET `/api/users/me/login-history`
+Get the current user's last 10 login attempts.
+
+**Response (200):**
+```json
+[
+  { "ipAddress": "10.0.0.5", "attemptTime": "2026-06-25T09:12:44", "success": true }
+]
+```
+
+---
+
+### GET `/api/users/me/sessions`
+List the current user's active sessions (one per non-expired refresh token). Send the caller's refresh token in the optional `X-Refresh-Token` header so the matching session is flagged `current`.
+
+**Response (200):**
+```json
+[
+  {
+    "id": 4,
+    "ipAddress": "172.18.0.1",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0",
+    "createdAt": "2026-06-26T17:54:45",
+    "expiresAt": "2026-07-03T17:54:45",
+    "current": true
+  }
+]
+```
+
+### DELETE `/api/users/me/sessions/{id}`
+Revoke a single session (deletes that refresh token). Ownership-checked. **204 No Content** on success, **404** if the session is not the caller's. The access token issued for that session keeps working until it expires (refresh stops working immediately).
+
+### POST `/api/users/me/sessions/logout-others`
+Revoke all of the caller's sessions except the current one (identified by the `X-Refresh-Token` header).
+
+**Response (200):** `{ "removed": 3 }`
+
+---
 
 ### GET `/api/users/me/tasks`
 Get all tasks assigned to the current user.
@@ -636,6 +806,39 @@ Import an LDAP user into the local database.
 
 ---
 
+## Admin - SLA Policies (`/api/admin/sla-policies`) 🔒 ADMIN only
+
+CRUD for SLA resolution-time policies. A policy scopes by optional `priority` and/or `teamId` (null = any); the most specific active policy wins for a task.
+
+### GET `/api/admin/sla-policies`
+List all policies (`SlaPolicyDTO[]`).
+
+### POST `/api/admin/sla-policies`
+Create a policy.
+
+**Request Body:**
+```json
+{
+  "name": "Acil işler",
+  "priority": "URGENT",
+  "teamId": null,
+  "targetHours": 4,
+  "businessHoursOnly": false,
+  "isActive": true
+}
+```
+**Response: 201 Created.**
+
+### PUT `/api/admin/sla-policies/{id}`
+Update a policy (same body).
+
+### DELETE `/api/admin/sla-policies/{id}`
+Delete a policy. **204 No Content.**
+
+> A scheduled job (every 30 min) re-evaluates open tasks against active policies, updates `sla_status`, and emits `SLA_AT_RISK` / `SLA_BREACHED` notifications (assignees + team leader) on transition.
+
+---
+
 ## Admin - System Logs (`/api/admin/logs`) 🔒 ADMIN only
 
 ### GET `/api/admin/logs/system`
@@ -744,5 +947,6 @@ All endpoints return standard error format:
 | 401 | Unauthorized - Missing or invalid token |
 | 403 | Forbidden - Insufficient permissions |
 | 404 | Not Found - Resource doesn't exist |
+| 423 | Locked - Account temporarily locked after repeated failures |
 | 429 | Too Many Requests - Rate limited |
 | 500 | Internal Server Error |

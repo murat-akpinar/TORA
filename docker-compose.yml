@@ -7,7 +7,7 @@ services:
     environment:
       POSTGRES_DB: tora
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
@@ -32,11 +32,13 @@ services:
       dockerfile: Dockerfile
     container_name: tora-backend
     environment:
+      # Swagger/OpenAPI yalnızca 'dev' profilinde açılır; prod için SPRING_PROFILES_ACTIVE=prod verin.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-dev}
       DB_HOST: postgres
       DB_PORT: 5432
       DB_NAME: tora
       DB_USER: postgres
-      DB_PASSWORD: postgres
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       SEED_SAMPLE_DATA: ${SEED_SAMPLE_DATA}

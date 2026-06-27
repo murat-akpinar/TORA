@@ -1,5 +1,19 @@
 import api from './api';
-import { Task, CreateTaskRequest, UpdateTaskStatusRequest } from '../types/Task';
+import { Task, CreateTaskRequest, UpdateTaskStatusRequest, TaskStatus } from '../types/Task';
+
+export interface BulkTaskRequest {
+  action: 'STATUS' | 'ASSIGN' | 'DELETE';
+  taskIds: number[];
+  status?: TaskStatus;
+  changeReason?: string;
+  assigneeId?: number;
+}
+
+export interface BulkResult {
+  succeeded: number;
+  failed: number;
+  errors: string[];
+}
 
 export const taskService = {
   getTasks: async (teamId?: number, year?: number, month?: number, projectId?: number): Promise<Task[]> => {
@@ -48,6 +62,11 @@ export const taskService = {
     if (teamId) params.append('teamId', teamId.toString());
     
     const response = await api.get<Task[]>(`/tasks/date-range?${params.toString()}`);
+    return response.data;
+  },
+
+  bulkOperation: async (request: BulkTaskRequest): Promise<BulkResult> => {
+    const response = await api.post<BulkResult>('/tasks/bulk', request);
     return response.data;
   },
 };

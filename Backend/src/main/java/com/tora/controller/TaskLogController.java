@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.TaskLogDTO;
 import com.tora.dto.TaskLogFilterRequest;
 import com.tora.service.TaskLogService;
@@ -15,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/logs")
 @PreAuthorize("hasAnyRole('ADMIN')")
+@Tag(name = "Görev Logları", description = "Görev aktivite/geçmiş kayıtları (admin)")
 public class TaskLogController {
     
     @Autowired

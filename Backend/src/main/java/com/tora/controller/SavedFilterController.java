@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.CreateSavedFilterRequest;
 import com.tora.dto.SavedFilterDTO;
 import com.tora.service.SavedFilterService;
@@ -13,6 +15,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/saved-filters")
+@Tag(name = "Kaydedilmiş Filtreler", description = "Kullanıcının kaydettiği görev filtreleri")
 public class SavedFilterController {
 
     @Autowired

@@ -1,5 +1,7 @@
 package com.tora.controller;
 
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import com.tora.dto.NotificationDTO;
 import com.tora.dto.NotificationPageDTO;
 import com.tora.service.NotificationService;
@@ -11,6 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/notifications")
+@Tag(name = "Bildirimler", description = "Kullanıcı bildirimleri ve okunma durumu")
 public class NotificationController {
 
     @Autowired

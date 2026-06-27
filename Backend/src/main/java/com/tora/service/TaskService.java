@@ -13,7 +13,9 @@ import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCache;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -61,7 +63,21 @@ public class TaskService {
     private TaskLabelService taskLabelService;
 
     @Autowired
+    private SlaService slaService;
+
+    @Autowired
     private CacheManager cacheManager;
+
+    // Toplu işlemde her görevi ayrı transaction'da çalıştırmak için proxy self-referans
+    @Autowired
+    @Lazy
+    private TaskService self;
+
+    @Autowired
+    private TaskChainService taskChainService;
+
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /**
      * İlgili teamId ile eşleşen ve "null:" ile başlayan (tüm-birim) dashboard cache
@@ -239,6 +255,14 @@ public class TaskService {
             }
         }
         
+        // Chain definitions (tamamlanınca açılacak takip görevleri)
+        if (request.getChains() != null) {
+            taskChainService.upsertChains(task, request.getChains());
+        }
+
+        // SLA: compute due/status now that createdAt is populated
+        slaService.recalculate(task);
+
         // Log task creation
         taskLogService.logTaskAction(task, "CREATED", currentUser, "Task created", null, convertToDTO(task));
 
@@ -341,8 +365,16 @@ public class TaskService {
             }
         }
         
+        // Chain definitions
+        if (request.getChains() != null) {
+            taskChainService.upsertChains(task, request.getChains());
+        }
+
         task = taskRepository.save(task);
-        
+
+        // SLA: recompute on update (priority/team/status may have changed)
+        slaService.recalculate(task);
+
         // Log task update
         TaskDTO newTaskDTO = convertToDTO(task);
         taskLogService.logTaskAction(task, "UPDATED", currentUser, "Task updated", oldTaskDTO, newTaskDTO);
@@ -357,9 +389,18 @@ public class TaskService {
             notificationService.notifyTaskStatusChanged(task,
                     oldTaskDTO.getStatus().name(), task.getStatus().name(), currentUser);
         }
+        // Zincir: düzenleme formundan COMPLETED'e geçilirse de tetiklensin
+        publishIfCompleted(oldTaskDTO.getStatus(), task, currentUser);
 
         evictDashboardCache(task.getTeam().getId());
         return newTaskDTO;
+    }
+
+    // Yalnızca COMPLETED'e GEÇİŞTE event yayınla; tetikleme AFTER_COMMIT'te ayrı tx'te çalışır
+    private void publishIfCompleted(TaskStatus oldStatus, Task task, User completer) {
+        if (task.getStatus() == TaskStatus.COMPLETED && oldStatus != TaskStatus.COMPLETED) {
+            eventPublisher.publishEvent(new com.tora.event.TaskCompletedEvent(task.getId(), completer.getId()));
+        }
     }
 
     public void deleteTask(Long id) {
@@ -409,6 +450,9 @@ public class TaskService {
         task.setStatus(request.getStatus());
         task = taskRepository.save(task);
         statusHistoryRepository.save(history);
+
+        // SLA: recompute (sets completedAt + MET/BREACHED on completion)
+        slaService.recalculate(task);
         
         // Log status change in task logs
         taskLogService.logTaskAction(
@@ -425,11 +469,80 @@ public class TaskService {
             notificationService.notifyTaskStatusChanged(task,
                     oldStatus.name(), request.getStatus().name(), currentUser);
         }
+        // Zincir: COMPLETED'e geçişte event (bulk işlemler bu metodu çağırdığı için otomatik kapsanır)
+        publishIfCompleted(oldStatus, task, currentUser);
 
         evictDashboardCache(task.getTeam().getId());
         return convertToDTO(task);
     }
     
+    // ───────────────── BULK OPERATIONS ─────────────────
+
+    // Dış transaction yok; her görev `self` proxy üzerinden kendi tx'inde işlenir
+    // (biri DB hatası verse diğerleri etkilenmez, başarılılar kalıcı olur → doğru sayım).
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public BulkResultDTO bulkOperation(BulkTaskRequest request) {
+        if (request.getTaskIds() == null || request.getTaskIds().isEmpty()) {
+            throw new RuntimeException("Görev seçilmedi");
+        }
+        int succeeded = 0;
+        int failed = 0;
+        List<String> errors = new ArrayList<>();
+
+        for (Long id : request.getTaskIds()) {
+            try {
+                switch (request.getAction() == null ? "" : request.getAction()) {
+                    case "STATUS" -> {
+                        if (request.getStatus() == null) throw new RuntimeException("Durum gerekli");
+                        UpdateTaskStatusRequest sr = new UpdateTaskStatusRequest();
+                        sr.setStatus(request.getStatus());
+                        sr.setChangeReason(request.getChangeReason());
+                        self.updateTaskStatus(id, sr);
+                    }
+                    case "ASSIGN" -> self.bulkAssign(id, request.getAssigneeId());
+                    case "DELETE" -> self.deleteTask(id);
+                    default -> throw new RuntimeException("Geçersiz işlem: " + request.getAction());
+                }
+                succeeded++;
+            } catch (Exception e) {
+                failed++;
+                errors.add("#" + id + ": " + e.getMessage());
+            }
+        }
+        return new BulkResultDTO(succeeded, failed, errors);
+    }
+
+    public void bulkAssign(Long id, Long assigneeId) {
+        if (assigneeId == null) throw new RuntimeException("Atanacak kullanıcı gerekli");
+        Task task = taskRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Task not found"));
+
+        List<Long> accessibleTeamIds = teamService.getAccessibleTeamIds();
+        if (!accessibleTeamIds.contains(task.getTeam().getId()) && !hasProjectAccess(task, accessibleTeamIds)) {
+            throw new RuntimeException("Access denied");
+        }
+        User currentUser = getCurrentUser();
+        checkCanModifyTask(task, currentUser);
+
+        User assignee = userRepository.findById(assigneeId)
+            .orElseThrow(() -> new RuntimeException("User not found: " + assigneeId));
+        boolean isNew = task.getAssignees().stream().noneMatch(u -> u.getId().equals(assigneeId));
+
+        TaskDTO oldDto = convertToDTO(task);
+        Set<User> assignees = new HashSet<>(task.getAssignees());
+        assignees.add(assignee);
+        task.setAssignees(assignees);
+        task = taskRepository.save(task);
+
+        taskLogService.logTaskAction(task, "ASSIGNEE_ADDED", currentUser, "Toplu atama", oldDto, convertToDTO(task));
+        if (isNew) {
+            notificationService.notifyTaskAssigned(task, Set.of(assignee), currentUser);
+        }
+        evictDashboardCache(task.getTeam().getId());
+    }
+
+    // ───────────────── /BULK OPERATIONS ─────────────────
+
     public List<TaskDTO> getTasksByDateRange(LocalDate startDate, LocalDate endDate, Long teamId) {
         List<Long> accessibleTeamIds = teamService.getAccessibleTeamIds();
         
@@ -496,6 +609,30 @@ public class TaskService {
         dto.setSubtasks(task.getSubtasks().stream()
             .map(this::convertSubtaskToDTO)
             .collect(Collectors.toList()));
+        dto.setSlaStatus(task.getSlaStatus());
+        dto.setSlaDueAt(task.getSlaDueAt());
+
+        if (task.getSpawnedFrom() != null) {
+            dto.setSpawnedFromTaskId(task.getSpawnedFrom().getId());
+            dto.setSpawnedFromTitle(task.getSpawnedFrom().getTitle());
+        }
+        if (task.getChains() != null && !task.getChains().isEmpty()) {
+            dto.setChains(task.getChains().stream().map(c -> {
+                com.tora.dto.TaskChainDTO cd = new com.tora.dto.TaskChainDTO();
+                cd.setId(c.getId());
+                cd.setTitle(c.getTitle());
+                cd.setContent(c.getContent());
+                cd.setTargetTeamId(c.getTargetTeam() != null ? c.getTargetTeam().getId() : null);
+                cd.setTargetTeamName(c.getTargetTeam() != null ? c.getTargetTeam().getName() : null);
+                cd.setTargetProjectId(c.getTargetProject() != null ? c.getTargetProject().getId() : null);
+                cd.setPriority(c.getPriority());
+                cd.setDurationDays(c.getDurationDays());
+                cd.setAssigneeIds(c.getAssignees() == null ? java.util.List.of()
+                    : c.getAssignees().stream().map(User::getId).collect(Collectors.toList()));
+                cd.setTriggeredAt(c.getTriggeredAt());
+                return cd;
+            }).collect(Collectors.toList()));
+        }
         return dto;
     }
     
