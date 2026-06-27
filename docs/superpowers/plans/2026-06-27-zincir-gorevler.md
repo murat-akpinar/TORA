@@ -539,7 +539,9 @@ git commit -m "feat(chain): TaskChainService.upsertChains + unit tests"
 
 **Interfaces:**
 - Consumes: `slaService.recalculate(Task)`, `taskLogService.logTaskAction(Task, String, User, String, Object, Object)`, `notificationService.notifyTaskAssigned(Task, Set<User>, User)`.
-- Produces: `TaskChainService.fireIfDefined(Task source, User completer): void`.
+- Produces: `TaskChainService.fireIfDefined(Task source, User completer): void` (çekirdek, unit testli) + `TaskCompletedEvent(Long sourceTaskId, Long completerId)` + `@TransactionalEventListener(AFTER_COMMIT)` dinleyici `onTaskCompleted(TaskCompletedEvent)`.
+
+> **TASARIM DÜZELTMESİ (denetim bulgusu #1):** `TaskService` sınıf düzeyinde `@Transactional`. Zinciri tamamlama transaction'ı İÇİNDE çağırmak, bir spawn hatasında tüm tx'i rollback-only yapıp **tamamlamayı geri alır**. Çözüm: tamamlama **commit olduktan sonra** `@TransactionalEventListener(phase = AFTER_COMMIT)` ile, **`REQUIRES_NEW`** ayrı transaction'da çalıştır. Böylece tamamlama kalıcıdır; zincir patlasa bile dokunamaz. completer `SecurityContext`'ten değil, event'teki `completerId`'den yüklenir (bulgu #4).
 
 - [ ] **Step 1: Failing testleri ekle** (`TaskChainServiceTest.java`'ya)
 
@@ -683,30 +685,61 @@ Expected: FAIL — `fireIfDefined` metodu yok.
 Run: `docker run --rm -v "$PWD/Backend":/app -w /app maven:3.9-eclipse-temurin-17 mvn -q test -Dtest=TaskChainServiceTest 2>&1 | tail -20`
 Expected: PASS (5 test).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: TaskCompletedEvent + AFTER_COMMIT dinleyici ekle**
+
+Create: `Backend/src/main/java/com/tora/event/TaskCompletedEvent.java`
+
+```java
+package com.tora.event;
+
+/** Bir görev COMPLETED'e geçtiğinde yayınlanır; zincir tetikleme bunu dinler. */
+public record TaskCompletedEvent(Long sourceTaskId, Long completerId) {}
+```
+
+`TaskChainService.java`'ya dinleyici ekle (fireIfDefined'i AYRI tx + commit sonrası sarmalar):
+
+```java
+    @org.springframework.transaction.event.TransactionalEventListener(
+        phase = org.springframework.transaction.event.TransactionPhase.AFTER_COMMIT)
+    @org.springframework.transaction.annotation.Transactional(
+        propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    public void onTaskCompleted(com.tora.event.TaskCompletedEvent event) {
+        Task source = taskRepository.findById(event.sourceTaskId()).orElse(null);
+        User completer = userRepository.findById(event.completerId()).orElse(null);
+        if (source == null || completer == null) return;
+        fireIfDefined(source, completer); // chains lazy → bu yeni tx içinde yüklenir
+    }
+```
+
+> Not: `fireIfDefined` içindeki `c.setTriggeredAt(...)` bu yeni tx'te commit edilir. Reopen→recomplete'te guard çalışır.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add Backend/src/main/java/com/tora/service/TaskChainService.java Backend/src/test/java/com/tora/service/TaskChainServiceTest.java
-git commit -m "feat(chain): fireIfDefined trigger logic + unit tests (relative dates, once-guard, best-effort)"
+git add Backend/src/main/java/com/tora/service/TaskChainService.java Backend/src/test/java/com/tora/service/TaskChainServiceTest.java Backend/src/main/java/com/tora/event/TaskCompletedEvent.java
+git commit -m "feat(chain): fireIfDefined + AFTER_COMMIT/REQUIRES_NEW listener (best-effort, tx-safe) + unit tests"
 ```
 
 ---
 
-### Task 6: TaskService entegrasyonu (upsert + tetikleme + DTO doldurma)
+### Task 6: TaskService entegrasyonu (upsert + event yayınlama + DTO doldurma)
 
 **Files:**
 - Modify: `Backend/src/main/java/com/tora/service/TaskService.java`
 
 **Interfaces:**
-- Consumes: `TaskChainService.upsertChains`, `TaskChainService.fireIfDefined`.
+- Consumes: `TaskChainService.upsertChains`, `TaskCompletedEvent`, `ApplicationEventPublisher`.
 
-- [ ] **Step 1: TaskChainService'i enjekte et**
+- [ ] **Step 1: TaskChainService + event publisher enjekte et**
 
 `TaskService.java` alanlarına ekle:
 
 ```java
     @Autowired
     private TaskChainService taskChainService;
+
+    @Autowired
+    private org.springframework.context.ApplicationEventPublisher eventPublisher;
 ```
 
 - [ ] **Step 2: createTask içinde upsert çağır**
@@ -730,16 +763,36 @@ git commit -m "feat(chain): fireIfDefined trigger logic + unit tests (relative d
         }
 ```
 
-- [ ] **Step 4: updateTaskStatus içinde tetikle**
+- [ ] **Step 4: COMPLETED'e geçişte event yayınla — HER İKİ yoldan (denetim bulgusu #2)**
 
-`updateTaskStatus`'ta `notifyTaskStatusChanged` çağrısından sonra, `evictDashboardCache`'ten önce ekle:
+> Durum iki yoldan COMPLETED olabiliyor: `updateTaskStatus` (durum endpoint'i + bulk) **ve** `updateTask` (düzenleme formu). Zincir ikisinden de tetiklenmeli. Tek yardımcı + sadece COMPLETED'e **geçişte** (oldStatus != COMPLETED) yayınla; event commit sonrası dinlenecek.
+
+Önce yardımcı metodu ekle (`TaskService.java`):
 
 ```java
-        // Zincir: yalnızca COMPLETED tetikler (bulk işlemler bu metodu çağırdığı için otomatik kapsanır)
-        if (request.getStatus() == TaskStatus.COMPLETED) {
-            taskChainService.fireIfDefined(task, currentUser);
+    // Yalnızca COMPLETED'e GEÇİŞTE yayınla (zaten COMPLETED olanı tekrar tetikleme)
+    private void publishIfCompleted(TaskStatus oldStatus, Task task, User completer) {
+        if (task.getStatus() == TaskStatus.COMPLETED && oldStatus != TaskStatus.COMPLETED) {
+            eventPublisher.publishEvent(new com.tora.event.TaskCompletedEvent(task.getId(), completer.getId()));
         }
+    }
 ```
+
+`updateTaskStatus`'ta `notifyTaskStatusChanged` çağrısından sonra ekle (`oldStatus` zaten mevcut, satır ~409):
+
+```java
+        publishIfCompleted(oldStatus, task, currentUser);
+```
+
+`updateTask`'ta status set edilmeden ÖNCE eski durumu yakala ve save'den sonra yayınla:
+
+```java
+        TaskStatus oldStatus = task.getStatus();   // task.setStatus(...) ÇAĞRISINDAN ÖNCE
+        // ... mevcut güncelleme + taskRepository.save(task) ...
+        publishIfCompleted(oldStatus, task, currentUser);
+```
+
+> `taskChainService.fireIfDefined`'i TaskService'ten DOĞRUDAN çağırma — sadece event yayınla. Tetikleme `@TransactionalEventListener(AFTER_COMMIT)` ile bu transaction commit olduktan sonra ayrı tx'te çalışır (bulgu #1).
 
 - [ ] **Step 5: convertToDTO içinde chains + spawnedFrom doldur**
 

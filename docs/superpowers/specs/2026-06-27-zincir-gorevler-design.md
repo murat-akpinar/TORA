@@ -95,6 +95,8 @@ Tek sorumluluk: zincir tanımlarını yönetmek ve tetiklemek. İzole, test edil
   4. `tanım.triggered_at = now`.
   5. **Her tanım kendi try/catch'inde**: biri patlarsa diğerleri devam eder, hata loglanır; kaynağın tamamlanması asla bozulmaz.
 
+> **Düzeltme (2026-06-27 denetim):** `TaskService` `@Transactional` olduğundan, zincir tamamlama tx'i İÇİNDE çalışırsa bir spawn hatası tüm tx'i rollback-only yapıp tamamlamayı geri alır. Bu yüzden tetikleme **commit sonrası ayrı transaction'da** yapılır: `TaskCompletedEvent` yayınlanır, `@TransactionalEventListener(AFTER_COMMIT)` + `REQUIRES_NEW` ile dinlenir. Ayrıca status hem `updateTaskStatus` hem `updateTask`'tan COMPLETED'e geçebildiği için event **her iki yoldan** (yalnızca geçişte) yayınlanır. Detay: uygulama planı Task 5–6.
+
 ### 4.3 Entegrasyon noktası
 `TaskService.updateTaskStatus(...)`: `notifyTaskStatusChanged` çağrısından sonra, `if (request.getStatus() == COMPLETED) taskChainService.fireIfDefined(task, currentUser);`. **Toplu işlemler** (`bulkOperation` → STATUS) zaten `updateTaskStatus`'u çağırdığı için otomatik kapsanır — ayrı kanca gerekmez.
 

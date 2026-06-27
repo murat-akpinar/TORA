@@ -142,6 +142,13 @@ Bir görev **tamamlanınca** (COMPLETED) önceden tanımlı **bir veya birden ç
 
 ## 🐛 Teknik Borç
 
+### Denetim Bulguları (2026-06-27)
+> Zincir özelliği öncesi kod incelemesi. #1 ve #2 zincir planında düzeltiliyor (`docs/superpowers/plans/2026-06-27-zincir-gorevler.md`); aşağıdakiler ayrı borç.
+- [ ] **Bulk işlem tx bütünlüğü** — `bulkOperation` her görevi try/catch ile sayıyor ama hepsi tek transaction (`TaskService` sınıf düzeyinde `@Transactional`). Bir görev DB hatası verirse tüm tx rollback olur → "succeeded" sayısı yanıltıcı (aslında hiçbiri kaydedilmez). **Düzeltme:** her görevi `REQUIRES_NEW` ile ayrı tx'te işle (ayrı bean üzerinden, self-invocation tx açmaz).
+- [ ] **Durum geçişi tek noktadan değil** — status hem `updateTaskStatus` hem `updateTask` hem `createTask`'ta set ediliyor (3 yer). Yan etkiler (bildirim/log/SLA/zincir) dağınık tetikleniyor; ileride tek "status transition" yardımcısında toplanmalı (event tabanlı). Zincir için #2'de kısmen ele alındı.
+- [ ] **Ölü kolon temizliği** — `tasks.is_postponed` / `postponed_to_date` / `postponed_from_date` / `task_type` (deprecated, V18 sonrası kullanılmıyor). Bir migration'da drop edilebilir (Task.java'da not mevcut). Düşük öncelik.
+- [ ] **Durum makinesi yok** — herhangi bir durumdan herhangi birine geçişe izin var (ör. COMPLETED → OPEN serbest). İş kuralı gerekiyorsa geçiş validasyonu eklenebilir.
+
 - [ ] Unit test coverage — servis katmanı (JUnit 5 + Mockito)
 - [ ] Integration test — REST endpoint'leri (`@SpringBootTest` + Testcontainers)
 - [ ] E2E test — kritik akışlar (Playwright veya Cypress)
