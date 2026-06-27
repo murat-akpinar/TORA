@@ -30,14 +30,14 @@ Bir görev **COMPLETED** olunca tanımlı **bir veya birden çok takip görevi**
 
 ### Kısa Vadeli
 
-#### İş Kodu (Task Code) Üretimi — her işe okunabilir kod
-> Git entegrasyonunun **ön koşulu**; tek başına da faydalı (insanlar "SIS-42" diye konuşur, koda göre arar).
-- [ ] `tasks.code` kolonu (VARCHAR, **unique**, **değişmez**) — oluşturmada bir kez üretilir; iş başka birime taşınsa bile kod değişmez (kimlik gibi)
-- [ ] Format: `<BİRİM_ÖNEKİ>-<sıra>` (örn. `SIS-0042`, `NET-0007`); sıra **atomik** üretilir (DB sequence / sayaç tablosu — yarış koşulu yok)
-- [ ] Birim → önek eşlemesi: Sistem=`SIS` · Network=`NET` · Yazılım=`YAZ` · Test=`TEST` · Some=`SOME` (ileride yönetilebilir)
-- [ ] Tüm üretim yolları kod alır: normal `createTask` **ve** zincirle üretilen görevler (`TaskChainService.spawn`)
-- [ ] Frontend: görev kartı/başlığında kod rozeti + koda göre arama (mevcut full-text search'e dahil)
-- [ ] Geriye dönük: mevcut işlere tek seferlik kod atama (migration changeSet)
+#### ✅ İş Kodu (Task Code) Üretimi — TAMAMLANDI (2026-06-27)
+> Git entegrasyonunun **ön koşulu**. Tasarım: `docs/superpowers/specs/2026-06-27-is-kodu-design.md`. **Karar:** tek global önek `TORA-0001` (birim öneki yerine — daha basit).
+- [x] `tasks.code` (VARCHAR(20), **unique**, **değişmez**); V32 `task_code_seq` + DEFAULT `TORA-nnnn`
+- [x] Üretim **DB düzeyi**: Hibernate `@Generated(INSERT)` → tüm insert yolları otomatik kod alır (normal görev **ve** zincir görev `TaskChainService.spawn` — E2E doğrulandı)
+- [x] Geriye dönük: mevcut işlere `id` sırasına göre kod (en eski = `TORA-0001`), idempotent backfill
+- [x] Arama: `SearchService` görevleri **koda göre** de bulur (tam + kısmi; `TORA-0002`/`0002` doğrulandı)
+- [x] Frontend: kod rozeti (TaskModal başlığı + TaskCard + TaskListView)
+- **Not (kapsam dışı):** raporlarda kod sütunu; önekin admin panelinden değiştirilmesi → ileride. **Sonraki:** Git entegrasyonu (kod = branch/MR glue).
 
 #### API Dokümantasyonu (Swagger)
 - [x] SpringDoc OpenAPI (Swagger UI) entegrasyonu

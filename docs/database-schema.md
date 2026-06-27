@@ -89,6 +89,7 @@ Core task/work item records.
 | Column | Type | Nullable | Default | Description |
 |--------|------|----------|---------|-------------|
 | `id` | BIGSERIAL | NO | auto | Primary key |
+| `code` | VARCHAR(20) | NO | `TORA-nnnn` | Okunabilir iş kodu; DB üretir (`task_code_seq`), değişmez, UNIQUE (V32) |
 | `title` | VARCHAR(255) | NO | — | Task title |
 | `content` | TEXT | YES | NULL | Detailed description |
 | `start_date` | DATE | NO | — | Task start date |
@@ -549,6 +550,7 @@ All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
 | `V29__add_session_info_to_refresh_tokens.xml` | Add `ip_address` + `user_agent` to `refresh_tokens` for the session-management UI |
 | `V30__create_sla.xml` | Create `sla_policies` (+ seed defaults), add `sla_due_at`/`sla_status`/`completed_at` to `tasks` with `idx_tasks_sla_status` |
 | `V31__create_task_chains.xml` | Create `task_chains` + `task_chain_assignees` (zincir görevler); add `spawned_from_task_id` to `tasks` (FK self, ON DELETE SET NULL) with indexes |
+| `V32__task_code.xml` | Create `task_code_seq` sequence; add `tasks.code` (`VARCHAR(20)`, DEFAULT `'TORA-' \|\| lpad(nextval,4,'0')`, UNIQUE, indexed); backfill existing tasks in `id` order (`TORA-0001`…) |
 
 ### Adding New Migrations
 
