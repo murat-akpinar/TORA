@@ -950,7 +950,7 @@ Git entegrasyonu ayarlarını getir. Secret düz metni **dönmez** (`secretConfi
   "secretConfigured": true,
   "mrOpenedStatus": "IN_PROGRESS",
   "mrMergedStatus": "COMPLETED",
-  "pushStatus": null
+  "branchStatus": null
 }
 ```
 
@@ -964,10 +964,12 @@ Ayarları güncelle. `webhookSecret` null/boş → mevcut secret korunur. Status
   "webhookSecret": "yeni-secret-veya-null",
   "mrOpenedStatus": "IN_PROGRESS",
   "mrMergedStatus": "COMPLETED",
-  "pushStatus": null
+  "branchStatus": null
 }
 ```
 Geçerli status değerleri: `OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `CANCELLED`.
+
+**Durum senkron ayarları:** `mrOpenedStatus`, `mrMergedStatus`, `branchStatus` (branch açılınca). Push/commit olayında otomatik durum **uygulanmaz**; commit durumu yalnızca smart-commit komutlarıyla değişir.
 
 ---
 

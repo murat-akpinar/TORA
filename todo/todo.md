@@ -132,6 +132,7 @@ GitHub/GitLab/Gitea webhook'ları iş koduyla (`TORA-\d+`) görevlere bağlanıy
 - [x] Birim testleri: `HmacUtilTest`, 3 parser testi, `GitWebhookServiceTest`; docs güncellendi (schema · architecture · api-reference · frontend)
 - [x] Admin Git ayar paneli tema uyumu (2026-06-28): stilsiz HTML → Catppuccin (`GitSettings.css`); toggle switch, platform renkli webhook rozetleri, Kopyala butonları, responsive grid
 - [x] Smart-commit komutları + aktör email-eşleme (2026-06-28): `SmartCommitParser` (durum geçişi + `#comment`, TR/EN alias); commit yazarı email → `User` (yoksa sistem); komut, genel durum senkronunu override eder. Tasarım: `docs/superpowers/specs/2026-06-28-smart-commit-email-esleme-design.md`
+- [x] Branch-event durum senkronu (2026-06-28): `BRANCH_CREATED` olayı (GitHub/Gitea `create`, GitLab `before`=zeros) → `branch_status` (V34 rename); push artık otomatik durum uygulamaz (sadece smart-commit); admin panelde webhook secret "Üret" butonu. Tasarım: `docs/superpowers/specs/2026-06-28-branch-event-durum-senkronu-design.md`
 - **Sonraki sub-project (backlog):** outbound (iş içinden "Branch/MR oluştur", repo token + git API yazma)
 - [ ] **Slack / Microsoft Teams entegrasyonu** — bildirim köprüsü (atama/durum/SLA olayları kanala düşer) + slash-command / mesajla görev oluşturma
 - [ ] E-posta ile görev oluşturma (IMAP listener)

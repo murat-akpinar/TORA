@@ -524,7 +524,7 @@ Git entegrasyonu (inbound/webhook) konfigürasyonu — **tek satır** (LDAP ayar
 | `webhook_secret_encrypted` | VARCHAR(500) | AES-GCM şifreli webhook secret; null = secret tanımsız |
 | `mr_opened_status` | VARCHAR(20) | MR/PR açılınca senkronlanacak `TaskStatus`; null/boş = no-op |
 | `mr_merged_status` | VARCHAR(20) | MR/PR merge olunca senkronlanacak `TaskStatus`; null/boş = no-op |
-| `push_status` | VARCHAR(20) | Push/commit gelince senkronlanacak `TaskStatus`; null/boş = no-op |
+| `branch_status` | VARCHAR(20) | Branch açılınca senkronlanacak `TaskStatus`; null/boş = no-op. V34: `push_status` → `branch_status` rename (branch açılınca durum senkronu). |
 | `created_at` / `updated_at` | TIMESTAMP | NOT NULL |
 
 Migration tek satırı idempotent seed eder (`WHERE NOT EXISTS`).
@@ -592,6 +592,7 @@ All migrations are in `Backend/src/main/resources/db/changelog/changes/`:
 | `V31__create_task_chains.xml` | Create `task_chains` + `task_chain_assignees` (zincir görevler); add `spawned_from_task_id` to `tasks` (FK self, ON DELETE SET NULL) with indexes |
 | `V32__task_code.xml` | Create `task_code_seq` sequence; add `tasks.code` (`VARCHAR(20)`, DEFAULT `'TORA-' \|\| lpad(nextval,4,'0')`, UNIQUE, indexed); backfill existing tasks in `id` order (`TORA-0001`…) |
 | `V33__create_git_integration.xml` | Create `git_settings` (single-row config) + `task_git_links` (unique `(task_id,platform,link_type,external_id)`, index `task_id`); seed `git-otomasyonu` system user (`is_active=false`) |
+| `V34__rename_push_status_to_branch_status.xml` | `git_settings.push_status` → `branch_status` rename (branch-event durum senkronu) |
 
 ### Adding New Migrations
 
