@@ -37,6 +37,7 @@
     <include file="db/changelog/changes/V31__create_task_chains.xml"/>
     <include file="db/changelog/changes/V32__task_code.xml"/>
     <include file="db/changelog/changes/V33__create_git_integration.xml"/>
+    <include file="db/changelog/changes/V34__rename_git_push_status_to_branch_status.xml"/>
 
 </databaseChangeLog>
 

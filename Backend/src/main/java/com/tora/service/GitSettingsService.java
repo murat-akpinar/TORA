@@ -33,7 +33,7 @@ public class GitSettingsService {
         }
         s.setMrOpenedStatus(normalize(req.getMrOpenedStatus()));
         s.setMrMergedStatus(normalize(req.getMrMergedStatus()));
-        s.setPushStatus(normalize(req.getPushStatus()));
+        s.setBranchStatus(normalize(req.getBranchStatus()));
         return toDTO(repository.save(s));
     }
 
@@ -61,7 +61,7 @@ public class GitSettingsService {
         dto.setSecretConfigured(s.getWebhookSecretEncrypted() != null && !s.getWebhookSecretEncrypted().isBlank());
         dto.setMrOpenedStatus(s.getMrOpenedStatus());
         dto.setMrMergedStatus(s.getMrMergedStatus());
-        dto.setPushStatus(s.getPushStatus());
+        dto.setBranchStatus(s.getBranchStatus());
         return dto;
     }
 }

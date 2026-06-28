@@ -110,7 +110,7 @@ class GitWebhookServiceTest {
         GitSettingsService settings = mock(GitSettingsService.class);
         GitSettings gs = new GitSettings();
         gs.setIsEnabled(true);
-        gs.setPushStatus("OPEN"); // genel ayar; komut bunu override etmeli
+        gs.setBranchStatus("OPEN"); // genel ayar; komut bunu override etmeli
         when(settings.getActiveSettings()).thenReturn(gs);
         when(settings.getDecryptedSecret()).thenReturn("s");
 
@@ -195,5 +195,77 @@ class GitWebhookServiceTest {
 
         assertEquals(GitWebhookService.WebhookOutcome.PROCESSED, result.outcome());
         verify(commentService).createSystemComment(task, "ilgileniyorum", system);
+    }
+
+    @Test
+    void process_branchCreated_appliesBranchStatus() {
+        GitSettingsService settings = mock(GitSettingsService.class);
+        GitSettings gs = new GitSettings();
+        gs.setIsEnabled(true);
+        gs.setBranchStatus("IN_PROGRESS");
+        when(settings.getActiveSettings()).thenReturn(gs);
+        when(settings.getDecryptedSecret()).thenReturn("s");
+
+        GitWebhookParser parser = mock(GitWebhookParser.class);
+        when(parser.platform()).thenReturn("github");
+        when(parser.verify(any(), any(), eq("s"))).thenReturn(true);
+        when(parser.parse(any(), any())).thenReturn(Optional.of(
+            new GitEvent("github", GitEventType.BRANCH_CREATED, List.of("TORA-12"), List.of())));
+
+        Task task = new Task();
+        task.setId(5L);
+        task.setCode("TORA-12");
+        TaskRepository taskRepo = mock(TaskRepository.class);
+        when(taskRepo.findByCode("TORA-12")).thenReturn(Optional.of(task));
+
+        User actor = new User();
+        actor.setId(1L);
+        UserRepository userRepo = mock(UserRepository.class);
+        when(userRepo.findByUsername("git-otomasyonu")).thenReturn(Optional.of(actor));
+
+        TaskService taskService = mock(TaskService.class);
+        GitWebhookService svc = new GitWebhookService(
+            settings, List.of(parser), taskRepo, mock(TaskGitLinkRepository.class),
+            userRepo, taskService, new SmartCommitParser(), mock(TaskCommentService.class));
+
+        var result = svc.process("github", Map.of(), "{}".getBytes());
+        assertEquals(GitWebhookService.WebhookOutcome.PROCESSED, result.outcome());
+        verify(taskService).updateTaskStatusAsSystem(5L, TaskStatus.IN_PROGRESS, actor);
+    }
+
+    @Test
+    void process_push_doesNotApplyAutoStatus() {
+        GitSettingsService settings = mock(GitSettingsService.class);
+        GitSettings gs = new GitSettings();
+        gs.setIsEnabled(true);
+        gs.setBranchStatus("IN_PROGRESS"); // push'a uygulanmamali
+        when(settings.getActiveSettings()).thenReturn(gs);
+        when(settings.getDecryptedSecret()).thenReturn("s");
+
+        GitWebhookParser parser = mock(GitWebhookParser.class);
+        when(parser.platform()).thenReturn("github");
+        when(parser.verify(any(), any(), eq("s"))).thenReturn(true);
+        GitRef ref = new GitRef("COMMIT", "abc", "http://x", "TORA-12 fix",
+            null, "feat", "Ada", "ada@firma.com", "TORA-12 fix");
+        when(parser.parse(any(), any())).thenReturn(Optional.of(
+            new GitEvent("github", GitEventType.PUSH, List.of("TORA-12 fix"), List.of(ref))));
+
+        Task task = new Task();
+        task.setId(5L);
+        task.setCode("TORA-12");
+        TaskRepository taskRepo = mock(TaskRepository.class);
+        when(taskRepo.findByCode("TORA-12")).thenReturn(Optional.of(task));
+        TaskGitLinkRepository linkRepo = mock(TaskGitLinkRepository.class);
+        when(linkRepo.findByTask_IdAndPlatformAndLinkTypeAndExternalId(5L, "github", "COMMIT", "abc"))
+            .thenReturn(Optional.empty());
+
+        TaskService taskService = mock(TaskService.class);
+        GitWebhookService svc = new GitWebhookService(
+            settings, List.of(parser), taskRepo, linkRepo, mock(UserRepository.class),
+            taskService, new SmartCommitParser(), mock(TaskCommentService.class));
+
+        var result = svc.process("github", Map.of(), "{}".getBytes());
+        assertEquals(GitWebhookService.WebhookOutcome.PROCESSED, result.outcome());
+        verify(taskService, never()).updateTaskStatusAsSystem(eq(5L), any(), any());
     }
 }

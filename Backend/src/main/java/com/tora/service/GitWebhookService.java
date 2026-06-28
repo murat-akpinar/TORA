@@ -180,8 +180,8 @@ public class GitWebhookService {
         String target = switch (event.type()) {
             case MR_OPENED -> settings.getMrOpenedStatus();
             case MR_MERGED -> settings.getMrMergedStatus();
-            case PUSH -> settings.getPushStatus();
-            case MR_CLOSED -> null;
+            case BRANCH_CREATED -> settings.getBranchStatus();
+            case PUSH, MR_CLOSED -> null;
         };
         if (target == null || target.isBlank()) return;
 

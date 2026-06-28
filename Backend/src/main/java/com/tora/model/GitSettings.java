@@ -25,8 +25,8 @@ public class GitSettings {
     @Column(name = "mr_merged_status", length = 20)
     private String mrMergedStatus;
 
-    @Column(name = "push_status", length = 20)
-    private String pushStatus;
+    @Column(name = "branch_status", length = 20)
+    private String branchStatus;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

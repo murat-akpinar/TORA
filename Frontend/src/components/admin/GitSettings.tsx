@@ -7,7 +7,7 @@ interface GitSettingsDTO {
   secretConfigured: boolean;
   mrOpenedStatus: string | null;
   mrMergedStatus: string | null;
-  pushStatus: string | null;
+  branchStatus: string | null;
 }
 
 // Backend TaskStatus enum değerleriyle eşleşmeli (com.tora.model.enums.TaskStatus).
@@ -41,7 +41,7 @@ const GitSettings: React.FC = () => {
       webhookSecret: secret || null,
       mrOpenedStatus: s.mrOpenedStatus || null,
       mrMergedStatus: s.mrMergedStatus || null,
-      pushStatus: s.pushStatus || null,
+      branchStatus: s.branchStatus || null,
     });
     setS(r.data);
     setSecret('');
@@ -108,7 +108,7 @@ const GitSettings: React.FC = () => {
 
         {statusField('MR/PR açılınca → durum', s.mrOpenedStatus, (v) => setS({ ...s, mrOpenedStatus: v }))}
         {statusField('MR/PR merge olunca → durum', s.mrMergedStatus, (v) => setS({ ...s, mrMergedStatus: v }))}
-        {statusField('Push/commit gelince → durum', s.pushStatus, (v) => setS({ ...s, pushStatus: v }))}
+        {statusField('Dal oluşturulunca → durum', s.branchStatus, (v) => setS({ ...s, branchStatus: v }))}
       </div>
 
       <div className="git-actions">

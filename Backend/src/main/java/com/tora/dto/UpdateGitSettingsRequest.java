@@ -8,5 +8,5 @@ public class UpdateGitSettingsRequest {
     private String webhookSecret;
     private String mrOpenedStatus;
     private String mrMergedStatus;
-    private String pushStatus;
+    private String branchStatus;
 }

@@ -8,5 +8,5 @@ public class GitSettingsDTO {
     private boolean secretConfigured;
     private String mrOpenedStatus;
     private String mrMergedStatus;
-    private String pushStatus;
+    private String branchStatus;
 }
