@@ -74,6 +74,21 @@ public class TaskCommentService {
         return toDTO(saved);
     }
 
+    // Webhook/sistem aktörü için; SecurityContext yok, erisim kontrolu uygulanmaz (guvenilir kaynak).
+    @Transactional
+    public TaskComment createSystemComment(Task task, String content, User author) {
+        TaskComment comment = new TaskComment();
+        comment.setTask(task);
+        comment.setAuthor(author);
+        comment.setContent(content.trim());
+        comment.setMentions(resolveMentions(content));
+
+        TaskComment saved = commentRepository.save(comment);
+        notificationService.notifyCommentMention(saved, saved.getMentions());
+        notificationService.notifyNewComment(saved);
+        return saved;
+    }
+
     @Transactional
     public TaskCommentDTO updateComment(Long commentId, TaskCommentRequest request) {
         TaskComment comment = commentRepository.findById(commentId)
