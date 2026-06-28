@@ -57,4 +57,18 @@ class GiteaWebhookParserTest {
         assertTrue(ev.get().codeTexts().stream().anyMatch(t -> t.contains("TORA-1148")));
         assertTrue(ev.get().refs().isEmpty());
     }
+
+    @Test
+    void parse_pushNewBranch_zeroBefore_returnsBranchCreated() {
+        // Gitea yeni branch'i create yerine push (before=sifirlar, commits bos) olarak da gonderir
+        String body = """
+            {"ref":"refs/heads/TORA-1178",
+             "before":"0000000000000000000000000000000000000000",
+             "commits":[]}
+            """;
+        Optional<GitEvent> ev = parser.parse(Map.of("x-gitea-event", "push"), body);
+        assertTrue(ev.isPresent());
+        assertEquals(GitEventType.BRANCH_CREATED, ev.get().type());
+        assertTrue(ev.get().codeTexts().stream().anyMatch(t -> t.contains("TORA-1178")));
+    }
 }

@@ -61,7 +61,10 @@ public class GiteaWebhookParser implements GitWebhookParser {
                 c.path("author").path("email").asText(""),
                 msg));
         }
-        return Optional.of(new GitEvent("gitea", GitEventType.PUSH, texts, refs));
+        String before = root.path("before").asText("");
+        GitEventType type = "0000000000000000000000000000000000000000".equals(before)
+            ? GitEventType.BRANCH_CREATED : GitEventType.PUSH;
+        return Optional.of(new GitEvent("gitea", type, texts, refs));
     }
 
     private Optional<GitEvent> parsePullRequest(JsonNode root) {
