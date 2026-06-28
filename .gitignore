@@ -39,3 +39,5 @@ ldap_test/ldif/
 .cursor/
 ruvector.db
 .claude
+
+.superpowers/*
