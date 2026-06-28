@@ -131,7 +131,8 @@ GitHub/GitLab/Gitea webhook'ları iş koduyla (`TORA-\d+`) görevlere bağlanıy
 - [x] Durum senkronu sistem aktörü (`updateTaskStatusAsSystem`) → COMPLETED'te `TaskCompletedEvent` (çift tetikleme guard); admin ayar sayfası + TaskModal "Bağlı commit/MR" paneli (`TaskDTO.gitLinks`)
 - [x] Birim testleri: `HmacUtilTest`, 3 parser testi, `GitWebhookServiceTest`; docs güncellendi (schema · architecture · api-reference · frontend)
 - [x] Admin Git ayar paneli tema uyumu (2026-06-28): stilsiz HTML → Catppuccin (`GitSettings.css`); toggle switch, platform renkli webhook rozetleri, Kopyala butonları, responsive grid
-- **Sonraki sub-project (backlog):** outbound (iş içinden "Branch/MR oluştur", repo token + git API yazma), aktör email-eşleme (`resolveGitActor`), smart-commit komutları (`TORA-42 #done`)
+- [x] Smart-commit komutları + aktör email-eşleme (2026-06-28): `SmartCommitParser` (durum geçişi + `#comment`, TR/EN alias); commit yazarı email → `User` (yoksa sistem); komut, genel durum senkronunu override eder. Tasarım: `docs/superpowers/specs/2026-06-28-smart-commit-email-esleme-design.md`
+- **Sonraki sub-project (backlog):** outbound (iş içinden "Branch/MR oluştur", repo token + git API yazma)
 - [ ] **Slack / Microsoft Teams entegrasyonu** — bildirim köprüsü (atama/durum/SLA olayları kanala düşer) + slash-command / mesajla görev oluşturma
 - [ ] E-posta ile görev oluşturma (IMAP listener)
 - [ ] Otomatik görev atama kuralları (round-robin, birim bazlı)

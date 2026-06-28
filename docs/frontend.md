@@ -321,6 +321,8 @@ Görev modalı, görevin `gitLinks` alanı doluysa **"Bağlı commit / MR"** sal
 ### Admin → Git Entegrasyonu (`components/admin/GitSettings.tsx`)
 Yönetim Paneli'nde **"Git Entegrasyonu"** sekmesi: aç/kapa toggle, webhook secret input (boş = değiştirme; `secretConfigured` rozetli), 3 durum-senkron dropdown (MR açıldı / MR merge / push → ilk seçenek "Değiştirme"), ve platform başına webhook URL gösterimi (`/api/webhooks/git/{github|gitlab|gitea}`). `GET/PUT /api/admin/git/settings` (`api` instance). Status seçenekleri `TaskStatus` enum'uyla eşleşir (`OPEN`, `IN_PROGRESS`, `TESTING`, `COMPLETED`, `CANCELLED`).
 
+> **Smart-commit kullanımı:** Commit mesajına `TORA-42 #done` yazarak görevi tamamlandı işaretleyebilir, `TORA-42 #comment metin` ile göreve yorum bırakabilirsiniz. Commit yazarınızın git email'i TORA hesabınızdaki email ile aynıysa işlem sizin adınıza kaydedilir.
+
 ---
 
 ## Error Handling

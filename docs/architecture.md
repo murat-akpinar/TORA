@@ -236,6 +236,7 @@ Git platformlarından (GitHub / GitLab / Gitea) gelen webhook'ları alıp iş ko
    - Durum senkronu: event tipine göre ayardaki status → `taskService.updateTaskStatusAsSystem(taskId, status, gitActor)`.
 3. **Zincir tetikleme:** `updateTaskStatusAsSystem` COMPLETED'e geçişte `publishIfCompleted` ile `TaskCompletedEvent` yayınlar → mevcut zincir görev mekanizması otomatik çalışır. Servis **ayrıca** event publish etmez (çift tetikleme guard).
 4. **Aktör izolasyonu:** webhook'ta SecurityContext yok; `updateTaskStatusAsSystem` erişim kontrolünü atlar, aktörü explicit alır. `resolveGitActor` şimdilik `git-otomasyonu` sistem kullanıcısını döner — ileride commit/MR yazarını email ile eşleme buraya eklenecek.
+- **Smart-commit:** Commit/MR mesajında iş kodundan sonra gelen komutlar (`#done`, `#progress`, `#test`, `#cancel`, `#reopen`, `#comment <metin>` ve Türkçe takma adları) `SmartCommitParser` ile ayrıştırılır. Durum komutu görevi o duruma taşır ve genel push/MR durum senkronunu o görev için override eder; `#comment` göreve sistem yorumu ekler. Aktör, commit yazarının email'i `User.email` ile eşlenerek bulunur (yoksa `git-otomasyonu`).
 
 **Nginx:** Git sunucu User-Agent'ları (`GitHub-Hookshot`, `GitLab/*`, `go-http-client`) 8G UA filtresine takılırdı; `$tora_is_webhook` + `$8g_ua_block` guard map'leriyle `/api/webhooks/git/*` yolu UA filtresinden muaf tutulur (imza koruması yeterli).
 

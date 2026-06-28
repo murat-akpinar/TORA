@@ -933,6 +933,9 @@ Git platformundan (`github` / `gitlab` / `gitea`) webhook al. Gövde ham JSON; h
 
 İşlenince: eşleşen göreve `task_git_links` upsert + ayarlı durum senkronu (MR merge → COMPLETED ise zincir görevleri de tetiklenir).
 
+**Smart-commit komutları:** Webhook gövdesindeki commit/MR mesajı iş kodu (`TORA-\d+`) içeriyorsa, koddan sonra gelen komutlar işlenir:
+`#done`/`#close`/`#tamam`/`#kapat` → COMPLETED, `#progress`/`#wip`/`#basla` → IN_PROGRESS, `#test`/`#testing` → TESTING, `#cancel`/`#iptal` → CANCELLED, `#reopen`/`#open`/`#ac` → OPEN, `#comment <metin>`/`#yorum <metin>` → göreve yorum. Durum komutu admin durum-senkron ayarını override eder.
+
 ---
 
 ## Admin - Git Settings (`/api/admin/git/settings`) 🔒 ADMIN only
