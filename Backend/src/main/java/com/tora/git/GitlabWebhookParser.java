@@ -54,7 +54,9 @@ public class GitlabWebhookParser implements GitWebhookParser {
                 c.path("url").asText(""),
                 firstLine(msg),
                 null, branch,
-                c.path("author").path("name").asText("")));
+                c.path("author").path("name").asText(""),
+                c.path("author").path("email").asText(""),
+                msg));
         }
         return Optional.of(new GitEvent("gitlab", GitEventType.PUSH, texts, refs));
     }
@@ -80,7 +82,9 @@ public class GitlabWebhookParser implements GitWebhookParser {
             oa.path("url").asText(""),
             oa.path("title").asText(""),
             status, branch,
-            root.path("user").path("username").asText(""));
+            root.path("user").path("username").asText(""),
+            null,
+            oa.path("title").asText("") + "\n" + oa.path("description").asText(""));
         return Optional.of(new GitEvent("gitlab", type, texts, List.of(ref)));
     }
 

@@ -21,13 +21,14 @@ class GitlabWebhookParserTest {
     void parse_push() {
         String body = """
             {"ref":"refs/heads/TORA-5",
-             "commits":[{"id":"sha1","message":"TORA-5 wip","url":"http://gl/c/sha1","author":{"name":"Lia"}}]}
+             "commits":[{"id":"sha1","message":"TORA-5 wip","url":"http://gl/c/sha1","author":{"name":"Lia","email":"ada@firma.com"}}]}
             """;
         Optional<GitEvent> ev = parser.parse(Map.of("x-gitlab-event", "Push Hook"), body);
         assertTrue(ev.isPresent());
         assertEquals(GitEventType.PUSH, ev.get().type());
         assertEquals("sha1", ev.get().refs().get(0).externalId());
         assertTrue(ev.get().codeTexts().stream().anyMatch(t -> t.contains("TORA-5")));
+        assertEquals("ada@firma.com", ev.get().refs().get(0).authorEmail());
     }
 
     @Test

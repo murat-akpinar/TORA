@@ -7,5 +7,7 @@ public record GitRef(
     String title,
     String status,
     String branch,
-    String author
+    String author,
+    String authorEmail,
+    String message
 ) {}

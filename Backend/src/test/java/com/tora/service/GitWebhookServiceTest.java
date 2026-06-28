@@ -79,7 +79,7 @@ class GitWebhookServiceTest {
         GitWebhookParser parser = mock(GitWebhookParser.class);
         when(parser.platform()).thenReturn("github");
         when(parser.verify(any(), any(), eq("s"))).thenReturn(true);
-        GitRef ref = new GitRef("COMMIT", "abc", "http://x", "TORA-12 fix", null, "feat", "Ada");
+        GitRef ref = new GitRef("COMMIT", "abc", "http://x", "TORA-12 fix", null, "feat", "Ada", "ada@firma.com", "TORA-12 fix");
         when(parser.parse(any(), any())).thenReturn(Optional.of(
             new GitEvent("github", GitEventType.PUSH, List.of("TORA-12 fix"), List.of(ref))));
 

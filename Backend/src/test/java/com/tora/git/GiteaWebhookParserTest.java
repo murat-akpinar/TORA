@@ -22,12 +22,13 @@ class GiteaWebhookParserTest {
     void parse_push() {
         String body = """
             {"ref":"refs/heads/TORA-3",
-             "commits":[{"id":"c1","message":"TORA-3 init","url":"http://gt/c1","author":{"name":"Mo"}}]}
+             "commits":[{"id":"c1","message":"TORA-3 init","url":"http://gt/c1","author":{"name":"Mo","email":"ada@firma.com"}}]}
             """;
         Optional<GitEvent> ev = parser.parse(Map.of("x-gitea-event", "push"), body);
         assertTrue(ev.isPresent());
         assertEquals(GitEventType.PUSH, ev.get().type());
         assertEquals("c1", ev.get().refs().get(0).externalId());
+        assertEquals("ada@firma.com", ev.get().refs().get(0).authorEmail());
     }
 
     @Test

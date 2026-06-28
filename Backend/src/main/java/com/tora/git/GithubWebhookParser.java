@@ -57,7 +57,9 @@ public class GithubWebhookParser implements GitWebhookParser {
                 c.path("url").asText(""),
                 firstLine(msg),
                 null, branch,
-                c.path("author").path("name").asText("")));
+                c.path("author").path("name").asText(""),
+                c.path("author").path("email").asText(""),
+                msg));
         }
         return Optional.of(new GitEvent("github", GitEventType.PUSH, texts, refs));
     }
@@ -86,7 +88,9 @@ public class GithubWebhookParser implements GitWebhookParser {
             pr.path("html_url").asText(""),
             pr.path("title").asText(""),
             status, branch,
-            pr.path("user").path("login").asText(""));
+            pr.path("user").path("login").asText(""),
+            null,
+            pr.path("title").asText("") + "\n" + pr.path("body").asText(""));
         return Optional.of(new GitEvent("github", type, texts, List.of(ref)));
     }
 

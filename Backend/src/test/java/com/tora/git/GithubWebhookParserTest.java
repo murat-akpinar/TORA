@@ -24,7 +24,7 @@ class GithubWebhookParserTest {
         String body = """
             {"ref":"refs/heads/feature/TORA-12",
              "commits":[
-               {"id":"abc123","message":"TORA-12 fix login","url":"http://gh/c/abc123","author":{"name":"Ada"}}
+               {"id":"abc123","message":"TORA-12 fix login","url":"http://gh/c/abc123","author":{"name":"Ada","email":"ada@firma.com"}}
              ]}
             """;
         Optional<GitEvent> ev = parser.parse(Map.of("x-github-event", "push"), body);
@@ -37,6 +37,8 @@ class GithubWebhookParserTest {
         assertEquals("COMMIT", ref.linkType());
         assertEquals("abc123", ref.externalId());
         assertEquals("Ada", ref.author());
+        assertEquals("ada@firma.com", ref.authorEmail());
+        assertEquals("TORA-12 fix login", ref.message());
     }
 
     @Test
