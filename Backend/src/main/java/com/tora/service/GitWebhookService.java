@@ -3,6 +3,8 @@ package com.tora.service;
 import com.tora.git.GitEvent;
 import com.tora.git.GitRef;
 import com.tora.git.GitWebhookParser;
+import com.tora.git.SmartCommand;
+import com.tora.git.SmartCommitParser;
 import com.tora.model.GitSettings;
 import com.tora.model.Task;
 import com.tora.model.TaskGitLink;
@@ -36,18 +38,24 @@ public class GitWebhookService {
     private final TaskGitLinkRepository linkRepository;
     private final UserRepository userRepository;
     private final TaskService taskService;
+    private final SmartCommitParser smartCommitParser;
+    private final TaskCommentService taskCommentService;
 
     public GitWebhookService(GitSettingsService gitSettingsService,
                              List<GitWebhookParser> parserList,
                              TaskRepository taskRepository,
                              TaskGitLinkRepository linkRepository,
                              UserRepository userRepository,
-                             TaskService taskService) {
+                             TaskService taskService,
+                             SmartCommitParser smartCommitParser,
+                             TaskCommentService taskCommentService) {
         this.gitSettingsService = gitSettingsService;
         this.taskRepository = taskRepository;
         this.linkRepository = linkRepository;
         this.userRepository = userRepository;
         this.taskService = taskService;
+        this.smartCommitParser = smartCommitParser;
+        this.taskCommentService = taskCommentService;
         for (GitWebhookParser p : parserList) {
             this.parsers.put(p.platform(), p);
         }
@@ -97,7 +105,11 @@ public class GitWebhookService {
                 linked++;
             }
         }
-        applyStatusSync(event, settings, matchedTasks);
+
+        // Smart-commit: her ref kendi metnindeki kodlara komut uygular; STATUS uygulanan gorevler
+        // genel durum senkronundan muaf tutulur (komut > ayar).
+        Set<Long> statusOverridden = applySmartCommits(event, matchedTasks);
+        applyStatusSync(event, settings, matchedTasks, statusOverridden);
         return new WebhookResult(WebhookOutcome.PROCESSED, linked);
     }
 
@@ -118,7 +130,53 @@ public class GitWebhookService {
         linkRepository.save(link);
     }
 
-    private void applyStatusSync(GitEvent event, GitSettings settings, List<Task> tasks) {
+    private Set<Long> applySmartCommits(GitEvent event, List<Task> matchedTasks) {
+        Set<Long> statusOverridden = new HashSet<>();
+        Map<String, Task> byCode = new HashMap<>();
+        for (Task t : matchedTasks) {
+            if (t.getCode() != null) byCode.put(t.getCode().toUpperCase(), t);
+        }
+        for (GitRef ref : event.refs()) {
+            String text = ref.message();
+            if (text == null || text.isBlank()) continue;
+            List<SmartCommand> commands = smartCommitParser.parse(text);
+            if (commands.isEmpty()) continue;
+            List<String> refCodes = extractCodes(List.of(text));
+            if (refCodes.isEmpty()) continue;
+
+            User actor = resolveGitActor(ref);
+            for (String code : refCodes) {
+                Task task = byCode.get(code);
+                if (task == null) continue;
+                for (SmartCommand cmd : commands) {
+                    applyCommand(task, cmd, actor, statusOverridden);
+                }
+            }
+        }
+        return statusOverridden;
+    }
+
+    private void applyCommand(Task task, SmartCommand cmd, User actor, Set<Long> statusOverridden) {
+        if (actor == null) {
+            log.warn("Git smart-commit: aktor cozulemedi, gorev {} komut atlandi", task.getId());
+            return;
+        }
+        try {
+            switch (cmd.kind()) {
+                case STATUS -> {
+                    if (task.getStatus() != cmd.status()) {
+                        taskService.updateTaskStatusAsSystem(task.getId(), cmd.status(), actor);
+                    }
+                    statusOverridden.add(task.getId());
+                }
+                case COMMENT -> taskCommentService.createSystemComment(task, cmd.text(), actor);
+            }
+        } catch (Exception ex) {
+            log.warn("Git smart-commit: gorev {} komut uygulamasi basarisiz: {}", task.getId(), ex.getMessage());
+        }
+    }
+
+    private void applyStatusSync(GitEvent event, GitSettings settings, List<Task> tasks, Set<Long> overridden) {
         String target = switch (event.type()) {
             case MR_OPENED -> settings.getMrOpenedStatus();
             case MR_MERGED -> settings.getMrMergedStatus();
@@ -134,12 +192,13 @@ public class GitWebhookService {
             log.warn("Git webhook: gecersiz durum ayari '{}'", target);
             return;
         }
-        User actor = resolveGitActor(event);
+        User actor = event.refs().isEmpty() ? resolveGitActor(null) : resolveGitActor(event.refs().get(0));
         if (actor == null) {
             log.warn("Git webhook: sistem kullanicisi '{}' bulunamadi, durum senkronu atlandi", SYSTEM_USERNAME);
             return;
         }
         for (Task task : tasks) {
+            if (overridden.contains(task.getId())) continue;
             if (task.getStatus() == newStatus) continue;
             try {
                 taskService.updateTaskStatusAsSystem(task.getId(), newStatus, actor);
@@ -149,8 +208,12 @@ public class GitWebhookService {
         }
     }
 
-    // Ileride email-esleme buraya: event.refs()[].author → User. Simdilik sistem kullanicisi.
-    private User resolveGitActor(GitEvent event) {
+    // Email-esleme: ref yazarinin emaili -> User; bulunamazsa sistem kullanicisi.
+    private User resolveGitActor(GitRef ref) {
+        if (ref != null && ref.authorEmail() != null && !ref.authorEmail().isBlank()) {
+            Optional<User> matched = userRepository.findByEmailIgnoreCase(ref.authorEmail());
+            if (matched.isPresent()) return matched.get();
+        }
         return userRepository.findByUsername(SYSTEM_USERNAME).orElse(null);
     }
 

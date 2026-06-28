@@ -5,6 +5,7 @@ import com.tora.model.Task;
 import com.tora.model.TaskGitLink;
 import com.tora.model.User;
 import com.tora.model.GitSettings;
+import com.tora.model.enums.TaskStatus;
 import com.tora.repository.TaskGitLinkRepository;
 import com.tora.repository.TaskRepository;
 import com.tora.repository.UserRepository;
@@ -41,7 +42,7 @@ class GitWebhookServiceTest {
         GitWebhookService svc = new GitWebhookService(
             settings, List.of(), mock(TaskRepository.class),
             mock(TaskGitLinkRepository.class), mock(UserRepository.class),
-            mock(TaskService.class));
+            mock(TaskService.class), mock(SmartCommitParser.class), mock(TaskCommentService.class));
 
         var result = svc.process("github", Map.of(), new byte[0]);
         assertEquals(GitWebhookService.WebhookOutcome.DISABLED, result.outcome());
@@ -62,7 +63,7 @@ class GitWebhookServiceTest {
         GitWebhookService svc = new GitWebhookService(
             settings, List.of(parser), mock(TaskRepository.class),
             mock(TaskGitLinkRepository.class), mock(UserRepository.class),
-            mock(TaskService.class));
+            mock(TaskService.class), mock(SmartCommitParser.class), mock(TaskCommentService.class));
 
         var result = svc.process("github", Map.of(), new byte[0]);
         assertEquals(GitWebhookService.WebhookOutcome.INVALID_SIGNATURE, result.outcome());
@@ -95,11 +96,104 @@ class GitWebhookServiceTest {
         UserRepository userRepo = mock(UserRepository.class);
 
         GitWebhookService svc = new GitWebhookService(
-            settings, List.of(parser), taskRepo, linkRepo, userRepo, mock(TaskService.class));
+            settings, List.of(parser), taskRepo, linkRepo, userRepo,
+            mock(TaskService.class), mock(SmartCommitParser.class), mock(TaskCommentService.class));
 
         var result = svc.process("github", Map.of(), "{}".getBytes());
         assertEquals(GitWebhookService.WebhookOutcome.PROCESSED, result.outcome());
         assertEquals(1, result.linkedCount());
         verify(linkRepo).save(any(TaskGitLink.class));
+    }
+
+    @Test
+    void process_smartCommitDone_setsStatusViaMatchedEmailActor() {
+        GitSettingsService settings = mock(GitSettingsService.class);
+        GitSettings gs = new GitSettings();
+        gs.setIsEnabled(true);
+        gs.setPushStatus("OPEN"); // genel ayar; komut bunu override etmeli
+        when(settings.getActiveSettings()).thenReturn(gs);
+        when(settings.getDecryptedSecret()).thenReturn("s");
+
+        GitWebhookParser parser = mock(GitWebhookParser.class);
+        when(parser.platform()).thenReturn("github");
+        when(parser.verify(any(), any(), eq("s"))).thenReturn(true);
+        GitRef ref = new GitRef("COMMIT", "abc", "http://x", "TORA-12 #done",
+            null, "feat", "Ada", "ada@firma.com", "TORA-12 #done bitti");
+        when(parser.parse(any(), any())).thenReturn(Optional.of(
+            new GitEvent("github", GitEventType.PUSH, List.of("TORA-12 #done bitti"), List.of(ref))));
+
+        Task task = new Task();
+        task.setId(5L);
+        task.setCode("TORA-12"); // applySmartCommits gorevleri koda gore indeksler
+        TaskRepository taskRepo = mock(TaskRepository.class);
+        when(taskRepo.findByCode("TORA-12")).thenReturn(Optional.of(task));
+
+        TaskGitLinkRepository linkRepo = mock(TaskGitLinkRepository.class);
+        when(linkRepo.findByTask_IdAndPlatformAndLinkTypeAndExternalId(5L, "github", "COMMIT", "abc"))
+            .thenReturn(Optional.empty());
+
+        User actor = new User();
+        actor.setId(3L);
+        UserRepository userRepo = mock(UserRepository.class);
+        when(userRepo.findByEmailIgnoreCase("ada@firma.com")).thenReturn(Optional.of(actor));
+
+        TaskService taskService = mock(TaskService.class);
+        SmartCommitParser smart = new SmartCommitParser();
+        TaskCommentService commentService = mock(TaskCommentService.class);
+
+        GitWebhookService svc = new GitWebhookService(
+            settings, List.of(parser), taskRepo, linkRepo, userRepo, taskService, smart, commentService);
+
+        var result = svc.process("github", Map.of(), "{}".getBytes());
+
+        assertEquals(GitWebhookService.WebhookOutcome.PROCESSED, result.outcome());
+        // komut COMPLETED uygulanir; genel push ayari OPEN uygulanmaz (override)
+        verify(taskService).updateTaskStatusAsSystem(5L, TaskStatus.COMPLETED, actor);
+        verify(taskService, never()).updateTaskStatusAsSystem(5L, TaskStatus.OPEN, actor);
+    }
+
+    @Test
+    void process_smartCommitComment_addsSystemComment() {
+        GitSettingsService settings = mock(GitSettingsService.class);
+        GitSettings gs = new GitSettings();
+        gs.setIsEnabled(true);
+        when(settings.getActiveSettings()).thenReturn(gs);
+        when(settings.getDecryptedSecret()).thenReturn("s");
+
+        GitWebhookParser parser = mock(GitWebhookParser.class);
+        when(parser.platform()).thenReturn("github");
+        when(parser.verify(any(), any(), eq("s"))).thenReturn(true);
+        GitRef ref = new GitRef("COMMIT", "abc", "http://x", "TORA-12",
+            null, "feat", "Ada", "yok@firma.com", "TORA-12 #comment ilgileniyorum");
+        when(parser.parse(any(), any())).thenReturn(Optional.of(
+            new GitEvent("github", GitEventType.PUSH, List.of("TORA-12 #comment ilgileniyorum"), List.of(ref))));
+
+        Task task = new Task();
+        task.setId(5L);
+        task.setCode("TORA-12"); // applySmartCommits gorevleri koda gore indeksler
+        TaskRepository taskRepo = mock(TaskRepository.class);
+        when(taskRepo.findByCode("TORA-12")).thenReturn(Optional.of(task));
+
+        TaskGitLinkRepository linkRepo = mock(TaskGitLinkRepository.class);
+        when(linkRepo.findByTask_IdAndPlatformAndLinkTypeAndExternalId(5L, "github", "COMMIT", "abc"))
+            .thenReturn(Optional.empty());
+
+        User system = new User();
+        system.setId(1L);
+        UserRepository userRepo = mock(UserRepository.class);
+        when(userRepo.findByEmailIgnoreCase("yok@firma.com")).thenReturn(Optional.empty());
+        when(userRepo.findByUsername("git-otomasyonu")).thenReturn(Optional.of(system));
+
+        TaskService taskService = mock(TaskService.class);
+        SmartCommitParser smart = new SmartCommitParser();
+        TaskCommentService commentService = mock(TaskCommentService.class);
+
+        GitWebhookService svc = new GitWebhookService(
+            settings, List.of(parser), taskRepo, linkRepo, userRepo, taskService, smart, commentService);
+
+        var result = svc.process("github", Map.of(), "{}".getBytes());
+
+        assertEquals(GitWebhookService.WebhookOutcome.PROCESSED, result.outcome());
+        verify(commentService).createSystemComment(task, "ilgileniyorum", system);
     }
 }
