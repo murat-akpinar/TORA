@@ -48,6 +48,19 @@ class GitlabWebhookParserTest {
     }
 
     @Test
+    void parse_push_newBranch_returnsBranchCreated() {
+        String body = """
+            {"ref":"refs/heads/TORA-1148",
+             "before":"0000000000000000000000000000000000000000",
+             "commits":[{"id":"c1","message":"TORA-1148 init","url":"http://gl/c1","author":{"name":"Mo","email":"mo@firma.com"}}]}
+            """;
+        Optional<GitEvent> ev = parser.parse(Map.of("x-gitlab-event", "Push Hook"), body);
+        assertTrue(ev.isPresent());
+        assertEquals(GitEventType.BRANCH_CREATED, ev.get().type());
+        assertTrue(ev.get().codeTexts().stream().anyMatch(t -> t.contains("TORA-1148")));
+    }
+
+    @Test
     void parse_unknown_empty() {
         assertTrue(parser.parse(Map.of("x-gitlab-event", "Note Hook"), "{}").isEmpty());
     }

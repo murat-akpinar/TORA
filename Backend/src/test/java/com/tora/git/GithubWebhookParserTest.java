@@ -60,6 +60,26 @@ class GithubWebhookParserTest {
     }
 
     @Test
+    void parse_createBranch_returnsBranchCreated() {
+        String body = """
+            {"ref":"TORA-1148","ref_type":"branch"}
+            """;
+        Optional<GitEvent> ev = parser.parse(Map.of("x-github-event", "create"), body);
+        assertTrue(ev.isPresent());
+        assertEquals(GitEventType.BRANCH_CREATED, ev.get().type());
+        assertTrue(ev.get().codeTexts().stream().anyMatch(t -> t.contains("TORA-1148")));
+        assertTrue(ev.get().refs().isEmpty());
+    }
+
+    @Test
+    void parse_createTag_empty() {
+        String body = """
+            {"ref":"v1.0","ref_type":"tag"}
+            """;
+        assertTrue(parser.parse(Map.of("x-github-event", "create"), body).isEmpty());
+    }
+
+    @Test
     void parse_unknownEvent_empty() {
         assertTrue(parser.parse(Map.of("x-github-event", "issues"), "{}").isEmpty());
     }

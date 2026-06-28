@@ -38,6 +38,7 @@ public class GithubWebhookParser implements GitWebhookParser {
             JsonNode root = mapper.readTree(body);
             if ("push".equals(event)) return parsePush(root);
             if ("pull_request".equals(event)) return parsePullRequest(root);
+            if ("create".equals(event)) return parseCreate("github", root);
             return Optional.empty();
         } catch (Exception e) {
             return Optional.empty();
@@ -92,6 +93,12 @@ public class GithubWebhookParser implements GitWebhookParser {
             null,
             pr.path("title").asText("") + "\n" + pr.path("body").asText(""));
         return Optional.of(new GitEvent("github", type, texts, List.of(ref)));
+    }
+
+    private Optional<GitEvent> parseCreate(String platform, JsonNode root) {
+        if (!"branch".equals(root.path("ref_type").asText(""))) return Optional.empty();
+        String branch = root.path("ref").asText("");
+        return Optional.of(new GitEvent(platform, GitEventType.BRANCH_CREATED, List.of(branch), List.of()));
     }
 
     private String stripRef(String ref) {

@@ -45,4 +45,16 @@ class GiteaWebhookParserTest {
         assertEquals("3", ev.get().refs().get(0).externalId());
         assertEquals("OPENED", ev.get().refs().get(0).status());
     }
+
+    @Test
+    void parse_createBranch_returnsBranchCreated() {
+        String body = """
+            {"ref":"TORA-1148","ref_type":"branch"}
+            """;
+        Optional<GitEvent> ev = parser.parse(Map.of("x-gitea-event", "create"), body);
+        assertTrue(ev.isPresent());
+        assertEquals(GitEventType.BRANCH_CREATED, ev.get().type());
+        assertTrue(ev.get().codeTexts().stream().anyMatch(t -> t.contains("TORA-1148")));
+        assertTrue(ev.get().refs().isEmpty());
+    }
 }
