@@ -133,7 +133,25 @@ GitHub/GitLab/Gitea webhook'ları iş koduyla (`TORA-\d+`) görevlere bağlanıy
 - [x] Admin Git ayar paneli tema uyumu (2026-06-28): stilsiz HTML → Catppuccin (`GitSettings.css`); toggle switch, platform renkli webhook rozetleri, Kopyala butonları, responsive grid
 - [x] Smart-commit komutları + aktör email-eşleme (2026-06-28): `SmartCommitParser` (durum geçişi + `#comment`, TR/EN alias); commit yazarı email → `User` (yoksa sistem); komut, genel durum senkronunu override eder. Tasarım: `docs/superpowers/specs/2026-06-28-smart-commit-email-esleme-design.md`
 - [x] Branch-event durum senkronu (2026-06-28): `BRANCH_CREATED` olayı (GitHub/Gitea `create`, GitLab `before`=zeros) → `branch_status` (V34 rename); push artık otomatik durum uygulamaz (sadece smart-commit); admin panelde webhook secret "Üret" butonu. Tasarım: `docs/superpowers/specs/2026-06-28-branch-event-durum-senkronu-design.md`
-- **Sonraki sub-project (backlog):** outbound (iş içinden "Branch/MR oluştur", repo token + git API yazma)
+- [x] Gitea/GitHub push-before-zeros fix (2026-06-28): yeni branch `create` event'i yanında `push` (`before`=sıfırlar) olarak da gelir → artık `BRANCH_CREATED`'e çevriliyor (3 platform tutarlı, idempotent). Canlıda doğrulandı.
+
+> ✅ **Git inbound TAM:** linking · smart-commit · email-eşleme · branch/MR durum senkronu · secret üreteci — hepsi canlı (`192.168.1.131:81`).
+
+---
+
+### ▶ BURADA KALDIK — Sıradaki Geliştirme (2026-06-28 sonu)
+
+Git inbound bitti. Sıradaki adaylar (henüz **tasarım/plan yok** — başlarken brainstorming → spec → plan → subagent-driven akışıyla):
+
+- [ ] **① Outbound Git** *(önerilen sıradaki sub-project — git'i "tam tur" yapar)*
+  - İş/görev modalından **"Branch oluştur" / "MR/PR oluştur"** butonları (git platformuna **yazma**).
+  - Gerekenler: repo başına **access token** (şifreli saklama, `EncryptionService` deseni) + **repo eşleme** (görev → hangi repo) + git REST API entegrasyonu (Gitea/GitHub/GitLab) + hata yönetimi.
+  - Not: Yeni güvenlik yüzeyi (token yazma) → kendi tasarım/güvenlik incelemesini hak ediyor.
+- [ ] **② Görsel iyileştirmeler** — bkz. üstteki **"Görsel İyileştirmeler"** bölümü (mobil arayüz, responsive/çoklu çözünürlük, renk şeması, yazı oturması). Hızlı, kullanıcıya dokunan kazanım.
+- [ ] **③ Küçük takip (düşük öncelik):** çok-commit'li push'ta **genel durum-senkron atfı** ilk commit yazarına gidiyor (smart-commit per-ref doğru). İstenirse genel sync'i de ref-bazlı aktöre çevir.
+
+---
+
 - [ ] **Slack / Microsoft Teams entegrasyonu** — bildirim köprüsü (atama/durum/SLA olayları kanala düşer) + slash-command / mesajla görev oluşturma
 - [ ] E-posta ile görev oluşturma (IMAP listener)
 - [ ] Otomatik görev atama kuralları (round-robin, birim bazlı)
