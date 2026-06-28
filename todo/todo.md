@@ -130,6 +130,7 @@ GitHub/GitLab/Gitea webhook'ları iş koduyla (`TORA-\d+`) görevlere bağlanıy
 - [x] Ham gövde controller (`/api/webhooks/git/{platform}`, JWT'siz `permitAll`, imza ile korunur, 401/404/200), `SecurityConfig` + Nginx UA-filtre baypası (guard map)
 - [x] Durum senkronu sistem aktörü (`updateTaskStatusAsSystem`) → COMPLETED'te `TaskCompletedEvent` (çift tetikleme guard); admin ayar sayfası + TaskModal "Bağlı commit/MR" paneli (`TaskDTO.gitLinks`)
 - [x] Birim testleri: `HmacUtilTest`, 3 parser testi, `GitWebhookServiceTest`; docs güncellendi (schema · architecture · api-reference · frontend)
+- [x] Admin Git ayar paneli tema uyumu (2026-06-28): stilsiz HTML → Catppuccin (`GitSettings.css`); toggle switch, platform renkli webhook rozetleri, Kopyala butonları, responsive grid
 - **Sonraki sub-project (backlog):** outbound (iş içinden "Branch/MR oluştur", repo token + git API yazma), aktör email-eşleme (`resolveGitActor`), smart-commit komutları (`TORA-42 #done`)
 - [ ] **Slack / Microsoft Teams entegrasyonu** — bildirim köprüsü (atama/durum/SLA olayları kanala düşer) + slash-command / mesajla görev oluşturma
 - [ ] E-posta ile görev oluşturma (IMAP listener)
