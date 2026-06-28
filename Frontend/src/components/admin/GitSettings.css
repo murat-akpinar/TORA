@@ -298,3 +298,36 @@
     font-size: 11px;
   }
 }
+
+/* ───────────────── Secret row ───────────────── */
+.git-secret-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.git-secret-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.git-generate {
+  flex-shrink: 0;
+  padding: 0 16px;
+  background: var(--ctp-surface0);
+  color: var(--ctp-text);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.git-generate:hover {
+  background: var(--ctp-surface1);
+  border-color: var(--ctp-blue);
+  color: var(--ctp-blue);
+}
+/* ───────────────── /Secret row ─────────────── */

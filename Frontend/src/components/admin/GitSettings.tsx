@@ -58,6 +58,12 @@ const GitSettings: React.FC = () => {
     });
   };
 
+  const generateSecret = () => {
+    const bytes = crypto.getRandomValues(new Uint8Array(32));
+    const hex = Array.from(bytes).map((b) => b.toString(16).padStart(2, '0')).join('');
+    setSecret(hex);
+  };
+
   const statusField = (
     label: string,
     value: string | null,
@@ -97,12 +103,15 @@ const GitSettings: React.FC = () => {
             Webhook Secret
             {s.secretConfigured && <span className="tag">tanımlı</span>}
           </label>
-          <input
-            type="password"
-            value={secret}
-            placeholder={s.secretConfigured ? '••••• (değiştirmek için yaz)' : 'secret'}
-            onChange={(e) => setSecret(e.target.value)}
-          />
+          <div className="git-secret-row">
+            <input
+              type="text"
+              value={secret}
+              placeholder={s.secretConfigured ? '••••• (değiştirmek için yaz)' : 'secret'}
+              onChange={(e) => setSecret(e.target.value)}
+            />
+            <button type="button" className="git-generate" onClick={generateSecret}>Üret</button>
+          </div>
           <span className="hint">HMAC imza doğrulaması için kullanılır.</span>
         </div>
 
