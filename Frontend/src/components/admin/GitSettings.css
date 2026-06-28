@@ -1,0 +1,300 @@
+.git-settings {
+  background-color: var(--ctp-mantle);
+  border: 1px solid var(--ctp-surface0);
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.git-settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.git-settings-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ctp-text);
+  margin: 0;
+}
+
+.git-settings-header h2 svg {
+  color: var(--ctp-mauve);
+}
+
+.git-settings-sub {
+  color: var(--ctp-subtext0);
+  font-size: 13px;
+  margin: 0 0 20px;
+}
+
+/* ───────────────── Toggle switch ───────────────── */
+.git-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ctp-subtext1);
+}
+
+.git-toggle input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.git-toggle .track {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--ctp-surface1);
+  transition: background 0.2s ease;
+}
+
+.git-toggle .track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--ctp-base);
+  transition: transform 0.2s ease;
+}
+
+.git-toggle input:checked + .track {
+  background: var(--ctp-green);
+}
+
+.git-toggle input:checked + .track::after {
+  transform: translateX(18px);
+}
+
+.git-toggle input:checked ~ .git-toggle-label {
+  color: var(--ctp-green);
+}
+
+/* ───────────────── Form grid ───────────────── */
+.git-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.git-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.git-field.full {
+  grid-column: 1 / -1;
+}
+
+.git-field label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ctp-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.git-field label .tag {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(166, 227, 161, 0.18);
+  color: var(--ctp-green);
+}
+
+.git-field input,
+.git-field select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--ctp-surface0);
+  border-radius: 6px;
+  background-color: var(--ctp-base);
+  color: var(--ctp-text);
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.git-field input:focus,
+.git-field select:focus {
+  outline: none;
+  border-color: var(--ctp-blue);
+  box-shadow: 0 0 0 3px rgba(137, 180, 250, 0.15);
+}
+
+.git-field .hint {
+  font-size: 12px;
+  color: var(--ctp-subtext0);
+}
+
+/* ───────────────── Actions ───────────────── */
+.git-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 4px;
+  padding-top: 16px;
+  border-top: 1px solid var(--ctp-surface0);
+}
+
+.git-actions .btn-save {
+  padding: 10px 22px;
+  background-color: var(--ctp-blue);
+  color: var(--ctp-base);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background-color 0.2s;
+}
+
+.git-actions .btn-save:hover {
+  background-color: var(--ctp-sapphire);
+}
+
+.git-saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ctp-green);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* ───────────────── Webhook URLs ───────────────── */
+.git-webhooks {
+  margin-top: 24px;
+}
+
+.git-webhooks-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ctp-text);
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.git-webhooks-sub {
+  color: var(--ctp-subtext0);
+  font-size: 12px;
+  margin: 0 0 14px;
+}
+
+.git-webhook-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.git-webhook-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--ctp-base);
+  border: 1px solid var(--ctp-surface0);
+  border-radius: 8px;
+}
+
+.git-platform {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  min-width: 92px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.git-platform.github { color: var(--ctp-text); }
+.git-platform.gitlab { color: var(--ctp-peach); }
+.git-platform.gitea  { color: var(--ctp-green); }
+
+.git-platform .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.git-webhook-url {
+  flex: 1;
+  min-width: 0;
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 13px;
+  color: var(--ctp-subtext1);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.git-copy {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  background: var(--ctp-surface0);
+  color: var(--ctp-subtext1);
+  border: 1px solid var(--ctp-surface1);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'Cascadia Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.git-copy:hover {
+  background: var(--ctp-surface1);
+  color: var(--ctp-text);
+}
+
+.git-copy.copied {
+  background: rgba(166, 227, 161, 0.18);
+  color: var(--ctp-green);
+  border-color: var(--ctp-green);
+}
+
+.git-note {
+  display: block;
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--ctp-subtext0);
+  line-height: 1.6;
+}
+
+.git-note code {
+  background: var(--ctp-surface0);
+  color: var(--ctp-text);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .git-grid {
+    grid-template-columns: 1fr;
+  }
+  .git-webhook-url {
+    font-size: 11px;
+  }
+}
